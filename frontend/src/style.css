@@ -1,0 +1,95 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #fdf6e3 0%, #f5e6d3 100%);
+  min-height: 100vh;
+  color: #5d4e37;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  outline: none;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(93, 78, 55, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(93, 78, 55, 0.15);
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #d4a574 0%, #c19660 100%);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #c19660 0%, #a88254 100%);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #d4a574;
+  color: #d4a574;
+}
+
+.btn-outline:hover {
+  background: #d4a574;
+  color: #fff;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  background: #f5e6d3;
+  color: #8b6914;
+  margin-right: 8px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

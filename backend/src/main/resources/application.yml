@@ -1,0 +1,65 @@
+server:
+  port: ${SERVER_PORT:19038}
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: nostalgia-backend
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:13338/nostalgia_db?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:nostalgia}
+    password: ${SPRING_DATASOURCE_PASSWORD:nostalgia123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:16338}
+      timeout: 5000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+logging:
+  level:
+    root: INFO
+    com.nostalgia: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+app:
+  upload:
+    path: ${APP_UPLOAD_PATH:./uploads}
+    url-prefix: /uploads
+  cache:
+    hot-posts-ttl: 3600
+    hot-categories-ttl: 7200
