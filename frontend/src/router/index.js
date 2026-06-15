@@ -20,6 +20,11 @@ const routes = [
     path: '/favorites',
     name: 'Favorites',
     component: () => import('../views/Favorites.vue')
+  },
+  {
+    path: '/archives',
+    name: 'Archives',
+    component: () => import('../views/Archives.vue')
   }
 ]
 

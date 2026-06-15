@@ -28,9 +28,23 @@
       </div>
 
       <div class="post-body">
-        <div class="info-row">
-          <span class="info-label">物件名称：</span>
-          <span class="info-value">{{ safeDisplayItemName(post.itemName) }}</span>
+        <div class="archive-info-grid">
+          <div class="info-row">
+            <span class="info-label">物件名称：</span>
+            <span class="info-value">{{ safeDisplayItemName(post.itemName) }}</span>
+          </div>
+          <div class="info-row" v-if="post.preservationStatus">
+            <span class="info-label">保存状态：</span>
+            <span :class="['info-value', 'status-value', getPreservationClass(post.preservationStatus)]">
+              <span class="status-icon">{{ getPreservationIcon(post.preservationStatus) }}</span>
+              {{ post.preservationStatus }}
+            </span>
+          </div>
+        </div>
+
+        <div class="content-section" v-if="post.storySummary">
+          <h3 class="section-title">📋 故事摘要</h3>
+          <p class="summary-text">{{ post.storySummary }}</p>
         </div>
 
         <div class="content-section">
@@ -228,6 +242,28 @@ const getEventTypeLabel = (type) => {
   return labels[type] || '事件'
 }
 
+const getPreservationClass = (status) => {
+  if (!status) return 'preservation-default'
+  const s = status.toLowerCase()
+  if (s.includes('完好') || s.includes('完美') || s.includes('新')) return 'preservation-excellent'
+  if (s.includes('正常') || s.includes('良好') || s.includes('功能')) return 'preservation-good'
+  if (s.includes('锈') || s.includes('磨损') || s.includes('旧')) return 'preservation-worn'
+  if (s.includes('破损') || s.includes('坏') || s.includes('故障')) return 'preservation-damaged'
+  return 'preservation-default'
+}
+
+const getPreservationIcon = (status) => {
+  const cls = getPreservationClass(status)
+  const icons = {
+    'preservation-excellent': '✨',
+    'preservation-good': '✅',
+    'preservation-worn': '🔶',
+    'preservation-damaged': '🔴',
+    'preservation-default': '📦'
+  }
+  return icons[cls] || '📦'
+}
+
 const loadPost = async () => {
   try {
     const res = await postsAPI.getDetail(postId.value)
@@ -405,8 +441,15 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+.archive-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
 .info-row {
-  margin-bottom: 16px;
+  margin-bottom: 0;
   padding: 12px 16px;
   background: #fdf6e3;
   border-radius: 8px;
@@ -419,6 +462,55 @@ onMounted(() => {
 
 .info-value {
   color: #5d4e37;
+}
+
+.status-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.status-icon {
+  font-size: 14px;
+}
+
+.preservation-excellent {
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+  color: #389e0d;
+}
+
+.preservation-good {
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  color: #096dd9;
+}
+
+.preservation-worn {
+  background: linear-gradient(135deg, #fffbe6 0%, #fff1b8 100%);
+  color: #d48806;
+}
+
+.preservation-damaged {
+  background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%);
+  color: #cf1322;
+}
+
+.preservation-default {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  color: #595959;
+}
+
+.summary-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #6b4f0f;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fffbe6 0%, #fff7e6 100%);
+  border-left: 4px solid #faad14;
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
 }
 
 .content-section {
@@ -699,6 +791,9 @@ onMounted(() => {
   }
   .post-title {
     font-size: 22px;
+  }
+  .archive-info-grid {
+    grid-template-columns: 1fr;
   }
   .timeline {
     padding-left: 32px;

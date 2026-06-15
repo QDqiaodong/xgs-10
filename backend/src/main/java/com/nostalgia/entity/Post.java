@@ -34,6 +34,12 @@ public class Post {
     @Column(columnDefinition = "TEXT")
     private String memory;
 
+    @Column(name = "preservation_status", length = 50)
+    private String preservationStatus;
+
+    @Column(name = "story_summary", length = 500)
+    private String storySummary;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSON")
     private List<String> images;

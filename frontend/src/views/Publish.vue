@@ -81,18 +81,42 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label>你的昵称</label>
-            <input
-              v-model="form.authorName"
-              type="text"
-              placeholder="不填则显示为匿名用户"
-            />
+          <div class="form-row">
+            <div class="form-group">
+              <label>保存状态</label>
+              <select v-model="form.preservationStatus">
+                <option value="">请选择保存状态</option>
+                <option value="完好保存">✨ 完好保存</option>
+                <option value="功能正常">✅ 功能正常</option>
+                <option value="略有磨损">🔶 略有磨损</option>
+                <option value="略有锈迹">🟠 略有锈迹</option>
+                <option value="破损待修">🔴 破损待修</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>你的昵称</label>
+              <input
+                v-model="form.authorName"
+                type="text"
+                placeholder="不填则显示为匿名用户"
+              />
+            </div>
           </div>
         </div>
 
         <div class="form-section">
           <h2 class="section-title">📝 故事内容</h2>
+
+          <div class="form-group">
+            <label>故事摘要</label>
+            <textarea
+              v-model="form.storySummary"
+              placeholder="用一两句话概括这个物件的故事（建议50-200字，档案页将展示此内容）"
+              rows="2"
+              maxlength="500"
+            ></textarea>
+            <p class="form-hint">{{ form.storySummary.length }}/500 字，留空将自动从内容中生成</p>
+          </div>
 
           <div class="form-group">
             <label>物件介绍 *</label>
@@ -234,6 +258,8 @@ const form = reactive({
   categoryId: '',
   eraId: '',
   authorName: '',
+  preservationStatus: '',
+  storySummary: '',
   content: '',
   story: '',
   memory: ''
@@ -354,6 +380,8 @@ const handleSubmit = async () => {
     formData.append('categoryId', Number(form.categoryId))
     formData.append('eraId', Number(form.eraId))
     if (form.authorName) formData.append('authorName', form.authorName)
+    if (form.preservationStatus) formData.append('preservationStatus', form.preservationStatus)
+    if (form.storySummary) formData.append('storySummary', form.storySummary)
     formData.append('content', form.content)
     if (form.story) formData.append('story', form.story)
     if (form.memory) formData.append('memory', form.memory)
@@ -559,6 +587,13 @@ onMounted(() => {
 
 .form-preview strong {
   color: #389e0d;
+}
+
+.form-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.5;
 }
 
 .form-actions {

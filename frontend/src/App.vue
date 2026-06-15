@@ -8,6 +8,7 @@
         </router-link>
         <nav class="nav">
           <router-link to="/" class="nav-link">首页</router-link>
+          <router-link to="/archives" class="nav-link">年代档案</router-link>
           <router-link to="/favorites" class="nav-link">我的收藏</router-link>
           <router-link to="/publish" class="nav-link publish-btn">发布回忆</router-link>
         </nav>

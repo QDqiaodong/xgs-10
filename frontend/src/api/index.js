@@ -40,4 +40,10 @@ export const timelineAPI = {
   create: (data) => api.post('/timeline', data)
 }
 
+export const archivesAPI = {
+  getList: (params) => api.get('/archives', { params }),
+  getGrouped: (params) => api.get('/archives/grouped', { params }),
+  getStats: () => api.get('/archives/stats')
+}
+
 export default api
