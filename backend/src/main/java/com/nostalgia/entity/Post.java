@@ -72,4 +72,7 @@ public class Post {
 
     @Transient
     private String eraName;
+
+    @Transient
+    private List<TimelineEvent> timelineEvents;
 }

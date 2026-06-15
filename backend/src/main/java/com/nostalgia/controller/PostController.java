@@ -1,6 +1,10 @@
 package com.nostalgia.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nostalgia.entity.Post;
+import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -47,6 +51,7 @@ public class PostController {
             @RequestParam Long categoryId,
             @RequestParam Long eraId,
             @RequestParam(required = false) String authorName,
+            @RequestParam(required = false) String timelineEvents,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) throws Exception {
         Post post = new Post();
         post.setTitle(title);
@@ -57,7 +62,14 @@ public class PostController {
         post.setCategoryId(categoryId);
         post.setEraId(eraId);
         post.setAuthorName(authorName != null && !authorName.isBlank() ? authorName : "匿名用户");
-        
-        return ResponseEntity.ok(postService.createPost(post, images));
+
+        List<TimelineEvent> events = null;
+        if (timelineEvents != null && !timelineEvents.isBlank()) {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new JavaTimeModule());
+            events = mapper.readValue(timelineEvents, new TypeReference<List<TimelineEvent>>() {});
+        }
+
+        return ResponseEntity.ok(postService.createPost(post, images, events));
     }
 }

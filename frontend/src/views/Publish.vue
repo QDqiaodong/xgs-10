@@ -118,6 +118,82 @@
           </div>
         </div>
 
+        <div class="form-section">
+          <h2 class="section-title">📅 故事年表（可选）</h2>
+          <p class="timeline-desc">记录这个老物件的生命历程：获得时间、使用阶段、闲置阶段和最终去向</p>
+
+          <div class="timeline-editor" v-if="timelineEvents.length > 0">
+            <div
+              v-for="(event, idx) in timelineEvents"
+              :key="idx"
+              class="timeline-edit-item"
+            >
+              <div class="timeline-edit-header">
+                <span class="timeline-index">第 {{ idx + 1 }} 个事件</span>
+                <button
+                  type="button"
+                  class="remove-event-btn"
+                  @click="removeTimelineEvent(idx)"
+                >
+                  × 删除
+                </button>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>事件类型 *</label>
+                  <select v-model="event.eventType" required>
+                    <option value="ACQUISITION">🎁 获得</option>
+                    <option value="USAGE">✨ 使用</option>
+                    <option value="IDLE">📦 闲置</option>
+                    <option value="DISPOSAL">🚪 去向</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>日期 *</label>
+                  <input
+                    v-model="event.eventDate"
+                    type="date"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>标题 *</label>
+                <input
+                  v-model="event.title"
+                  type="text"
+                  placeholder="例如：生日收到的礼物"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label>详细描述</label>
+                <textarea
+                  v-model="event.description"
+                  placeholder="详细描述这个时间点发生的故事..."
+                  rows="2"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label>地点</label>
+                <input
+                  v-model="event.location"
+                  type="text"
+                  placeholder="例如：北京王府井百货"
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="add-event-btn"
+            @click="addTimelineEvent"
+          >
+            + 添加年表事件
+          </button>
+        </div>
+
         <div class="form-actions">
           <button type="button" class="btn btn-outline" @click="resetForm">
             重置
@@ -144,6 +220,7 @@ const eras = ref([])
 const previewImages = ref([])
 const selectedFiles = ref([])
 const submitting = ref(false)
+const timelineEvents = ref([])
 
 const form = reactive({
   title: '',
@@ -155,6 +232,20 @@ const form = reactive({
   story: '',
   memory: ''
 })
+
+const addTimelineEvent = () => {
+  timelineEvents.value.push({
+    eventType: 'ACQUISITION',
+    eventDate: '',
+    title: '',
+    description: '',
+    location: ''
+  })
+}
+
+const removeTimelineEvent = (index) => {
+  timelineEvents.value.splice(index, 1)
+}
 
 const loadCategories = async () => {
   try {
@@ -203,10 +294,23 @@ const resetForm = () => {
   })
   previewImages.value = []
   selectedFiles.value = []
+  timelineEvents.value = []
+}
+
+const validateTimelineEvents = () => {
+  for (let i = 0; i < timelineEvents.value.length; i++) {
+    const event = timelineEvents.value[i]
+    if (!event.eventType || !event.eventDate || !event.title.trim()) {
+      alert(`请填写第 ${i + 1} 个年表事件的完整信息（类型、日期、标题为必填）`)
+      return false
+    }
+  }
+  return true
 }
 
 const handleSubmit = async () => {
   if (submitting.value) return
+  if (!validateTimelineEvents()) return
 
   submitting.value = true
   try {
@@ -220,6 +324,17 @@ const handleSubmit = async () => {
     formData.append('content', form.content)
     if (form.story) formData.append('story', form.story)
     if (form.memory) formData.append('memory', form.memory)
+
+    if (timelineEvents.value.length > 0) {
+      const validEvents = timelineEvents.value.map(e => ({
+        eventType: e.eventType,
+        eventDate: e.eventDate,
+        title: e.title.trim(),
+        description: e.description?.trim() || null,
+        location: e.location?.trim() || null
+      }))
+      formData.append('timelineEvents', JSON.stringify(validEvents))
+    }
 
     selectedFiles.value.forEach((file) => {
       formData.append('images', file)
@@ -405,6 +520,72 @@ onMounted(() => {
 .form-actions .btn {
   padding: 12px 40px;
   font-size: 16px;
+}
+
+.timeline-desc {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 16px;
+}
+
+.timeline-editor {
+  margin-bottom: 16px;
+}
+
+.timeline-edit-item {
+  background: #fdf6e3;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid #e8d5b8;
+}
+
+.timeline-edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #d4a574;
+}
+
+.timeline-index {
+  font-weight: 600;
+  color: #8b6914;
+  font-size: 14px;
+}
+
+.remove-event-btn {
+  background: transparent;
+  border: none;
+  color: #ff4d4f;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.remove-event-btn:hover {
+  background: #fff1f0;
+}
+
+.add-event-btn {
+  width: 100%;
+  padding: 14px;
+  border: 2px dashed #d4a574;
+  border-radius: 8px;
+  background: #fdf6e3;
+  color: #8b6914;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.add-event-btn:hover {
+  border-color: #c19660;
+  background: #f5e6d3;
+  color: #6b4f0f;
 }
 
 @media (max-width: 768px) {

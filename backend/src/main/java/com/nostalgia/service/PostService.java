@@ -3,9 +3,11 @@ package com.nostalgia.service;
 import com.nostalgia.entity.Category;
 import com.nostalgia.entity.Era;
 import com.nostalgia.entity.Post;
+import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.repository.CategoryRepository;
 import com.nostalgia.repository.EraRepository;
 import com.nostalgia.repository.PostRepository;
+import com.nostalgia.repository.TimelineEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,6 +32,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final EraRepository eraRepository;
+    private final TimelineEventRepository timelineEventRepository;
 
     private final String uploadPath = "/app/uploads";
 
@@ -63,12 +66,19 @@ public class PostService {
         Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("帖子不存在"));
         postRepository.incrementViewCount(id);
         populateCategoryAndEraNames(post);
+        populateTimelineEvents(post);
         return post;
     }
 
     @CacheEvict(value = {"hotPosts"}, allEntries = true)
     @Transactional
     public Post createPost(Post post, List<MultipartFile> images) throws IOException {
+        return createPost(post, images, null);
+    }
+
+    @CacheEvict(value = {"hotPosts"}, allEntries = true)
+    @Transactional
+    public Post createPost(Post post, List<MultipartFile> images, List<TimelineEvent> timelineEvents) throws IOException {
         if (images != null && !images.isEmpty()) {
             List<String> imageUrls = new ArrayList<>();
             Path uploadDir = Paths.get(uploadPath);
@@ -85,7 +95,18 @@ public class PostService {
             post.setImages(imageUrls);
         }
 
-        return postRepository.save(post);
+        Post savedPost = postRepository.save(post);
+
+        if (timelineEvents != null && !timelineEvents.isEmpty()) {
+            for (int i = 0; i < timelineEvents.size(); i++) {
+                TimelineEvent event = timelineEvents.get(i);
+                event.setPostId(savedPost.getId());
+                event.setSortOrder(i);
+            }
+            timelineEventRepository.saveAll(timelineEvents);
+        }
+
+        return savedPost;
     }
 
     private void populateCategoryAndEraNames(Post post) {
@@ -99,5 +120,10 @@ public class PostService {
                 .map(Era::getName)
                 .ifPresent(post::setEraName);
         }
+    }
+
+    private void populateTimelineEvents(Post post) {
+        List<TimelineEvent> events = timelineEventRepository.findByPostIdOrderByEventDateAscSortOrderAsc(post.getId());
+        post.setTimelineEvents(events);
     }
 }

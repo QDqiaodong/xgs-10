@@ -35,4 +35,9 @@ export const favoritesAPI = {
   getUserFavorites: (userSession) => api.get('/favorites/user', { params: { userSession } })
 }
 
+export const timelineAPI = {
+  getByPost: (postId) => api.get(`/timeline/post/${postId}`),
+  create: (data) => api.post('/timeline', data)
+}
+
 export default api

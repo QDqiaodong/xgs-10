@@ -43,6 +43,35 @@
           <h3 class="section-title">💭 个人回忆</h3>
           <p class="content-text">{{ post.memory }}</p>
         </div>
+
+        <div class="content-section" v-if="post.timelineEvents && post.timelineEvents.length > 0">
+          <h3 class="section-title">📅 故事年表</h3>
+          <div class="timeline">
+            <div
+              v-for="(event, idx) in post.timelineEvents"
+              :key="event.id"
+              class="timeline-item"
+            >
+              <div class="timeline-line" v-if="idx < post.timelineEvents.length - 1"></div>
+              <div :class="['timeline-dot', `event-${event.eventType.toLowerCase()}`]">
+                <span class="dot-icon">{{ getEventTypeIcon(event.eventType) }}</span>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span :class="['event-tag', `tag-${event.eventType.toLowerCase()}`]">
+                    {{ getEventTypeLabel(event.eventType) }}
+                  </span>
+                  <span class="timeline-date">{{ formatEventDate(event.eventDate) }}</span>
+                </div>
+                <h4 class="timeline-title">{{ event.title }}</h4>
+                <p class="timeline-desc" v-if="event.description">{{ event.description }}</p>
+                <div class="timeline-location" v-if="event.location">
+                  📍 {{ event.location }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <footer class="post-footer">
@@ -130,6 +159,36 @@ const formatDate = (dateStr) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+const formatEventDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+const getEventTypeIcon = (type) => {
+  const icons = {
+    ACQUISITION: '🎁',
+    USAGE: '✨',
+    IDLE: '📦',
+    DISPOSAL: '🚪'
+  }
+  return icons[type] || '📌'
+}
+
+const getEventTypeLabel = (type) => {
+  const labels = {
+    ACQUISITION: '获得',
+    USAGE: '使用',
+    IDLE: '闲置',
+    DISPOSAL: '去向'
+  }
+  return labels[type] || '事件'
 }
 
 const loadPost = async () => {
@@ -417,12 +476,151 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.timeline {
+  position: relative;
+  padding-left: 40px;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 32px;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 15px;
+  top: 40px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #d4a574 0%, #e8d5b8 100%);
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -40px;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.timeline-dot.event-acquisition {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.timeline-dot.event-usage {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+}
+
+.timeline-dot.event-idle {
+  background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+}
+
+.timeline-dot.event-disposal {
+  background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+}
+
+.dot-icon {
+  font-size: 14px;
+}
+
+.timeline-content {
+  background: #fdf6e3;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border-left: 3px solid #d4a574;
+  transition: all 0.3s;
+}
+
+.timeline-content:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(139, 105, 20, 0.1);
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.event-tag {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.tag-acquisition {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.tag-usage {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+}
+
+.tag-idle {
+  background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+}
+
+.tag-disposal {
+  background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+}
+
+.timeline-date {
+  font-size: 13px;
+  color: #999;
+}
+
+.timeline-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #5d4e37;
+  margin-bottom: 8px;
+}
+
+.timeline-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #6b5b47;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+}
+
+.timeline-location {
+  font-size: 13px;
+  color: #8b6914;
+}
+
 @media (max-width: 768px) {
   .detail-card {
     padding: 20px;
   }
   .post-title {
     font-size: 22px;
+  }
+  .timeline {
+    padding-left: 32px;
+  }
+  .timeline-dot {
+    left: -32px;
+    width: 28px;
+    height: 28px;
+  }
+  .timeline-line {
+    left: 13px;
   }
 }
 </style>
