@@ -6,12 +6,15 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nostalgia.entity.Post;
 import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.service.PostService;
+import com.nostalgia.util.TextCleaner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -53,15 +56,23 @@ public class PostController {
             @RequestParam(required = false) String authorName,
             @RequestParam(required = false) String timelineEvents,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) throws Exception {
+        String cleanedTitle = TextCleaner.cleanTitle(title);
+        String cleanedItemName = TextCleaner.cleanItemName(itemName);
+        if (cleanedTitle.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "标题无效，请输入有效的标题（至少2个字符）");
+        }
+        if (cleanedItemName.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "物件名称无效，请输入有效的物件名称（至少2个字符）");
+        }
         Post post = new Post();
-        post.setTitle(title);
-        post.setItemName(itemName);
-        post.setContent(content);
-        post.setStory(story);
-        post.setMemory(memory);
+        post.setTitle(cleanedTitle);
+        post.setItemName(cleanedItemName);
+        post.setContent(content != null ? content.trim() : null);
+        post.setStory(story != null && !story.isBlank() ? story.trim() : null);
+        post.setMemory(memory != null && !memory.isBlank() ? memory.trim() : null);
         post.setCategoryId(categoryId);
         post.setEraId(eraId);
-        post.setAuthorName(authorName != null && !authorName.isBlank() ? authorName : "匿名用户");
+        post.setAuthorName(authorName != null && !authorName.isBlank() ? authorName.trim() : "匿名用户");
 
         List<TimelineEvent> events = null;
         if (timelineEvents != null && !timelineEvents.isBlank()) {

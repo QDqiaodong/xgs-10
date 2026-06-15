@@ -43,6 +43,7 @@
                 placeholder="给你的回忆起个标题"
                 required
               />
+              <p v-if="titleWarning" class="form-warning">{{ titleWarning }}</p>
             </div>
             <div class="form-group">
               <label>物件名称 *</label>
@@ -52,6 +53,10 @@
                 placeholder="例如：铁皮青蛙、双卡录音机"
                 required
               />
+              <p v-if="itemNameWarning" class="form-warning">{{ itemNameWarning }}</p>
+              <p v-if="cleanedItemName && cleanedItemName !== form.itemName.trim()" class="form-preview">
+                清洗后显示为：<strong>{{ cleanedItemName }}</strong>
+              </p>
             </div>
           </div>
 
@@ -208,10 +213,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { categoriesAPI, erasAPI, postsAPI } from '../api'
 import { processImage, createImagePreview } from '../utils/imageProcessor'
+import { cleanItemName, cleanTitle } from '../utils/textCleaner'
 
 const router = useRouter()
 
@@ -231,6 +237,22 @@ const form = reactive({
   content: '',
   story: '',
   memory: ''
+})
+
+const cleanedItemName = computed(() => cleanItemName(form.itemName))
+const cleanedTitle = computed(() => cleanTitle(form.title))
+const itemNameWarning = computed(() => {
+  if (!form.itemName.trim()) return ''
+  if (!cleanedItemName.value) return '物件名称过短或无效，请输入至少2个有效字符'
+  if (cleanedItemName.value !== form.itemName.trim()) {
+    return '提交时将自动清理名称中的多余空格和重复符号'
+  }
+  return ''
+})
+const titleWarning = computed(() => {
+  if (!form.title.trim()) return ''
+  if (!cleanedTitle.value) return '标题过短或无效，请输入至少2个有效字符'
+  return ''
 })
 
 const addTimelineEvent = () => {
@@ -312,12 +334,23 @@ const handleSubmit = async () => {
   if (submitting.value) return
   if (!validateTimelineEvents()) return
 
+  const finalTitle = cleanTitle(form.title)
+  const finalItemName = cleanItemName(form.itemName)
+  if (!finalTitle) {
+    alert('标题无效，请输入有效的标题（至少2个字符）')
+    return
+  }
+  if (!finalItemName) {
+    alert('物件名称无效，请输入有效的物件名称（至少2个字符）')
+    return
+  }
+
   submitting.value = true
   try {
     const formData = new FormData()
 
-    formData.append('title', form.title)
-    formData.append('itemName', form.itemName)
+    formData.append('title', finalTitle)
+    formData.append('itemName', finalItemName)
     formData.append('categoryId', Number(form.categoryId))
     formData.append('eraId', Number(form.eraId))
     if (form.authorName) formData.append('authorName', form.authorName)
@@ -508,6 +541,24 @@ onMounted(() => {
 .form-group textarea {
   resize: vertical;
   min-height: 80px;
+}
+
+.form-warning {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #fa8c16;
+  line-height: 1.5;
+}
+
+.form-preview {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #52c41a;
+  line-height: 1.5;
+}
+
+.form-preview strong {
+  color: #389e0d;
 }
 
 .form-actions {

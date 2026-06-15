@@ -13,11 +13,15 @@
         </div>
       </header>
 
-      <div class="post-images" v-if="post.images && post.images.length > 0">
+      <div class="post-images post-images-grid" v-if="post.images && post.images.length > 0">
         <div
           v-for="(img, idx) in post.images"
           :key="idx"
-          class="post-image-item"
+          :class="[
+            'post-image-item',
+            getImageLayoutClass(idx),
+            getCardImageClass(getImgOrientation(getImageUrl(img)))
+          ]"
         >
           <img :src="getImageUrl(img)" :alt="`${post.title} ${idx + 1}`" />
         </div>
@@ -26,7 +30,7 @@
       <div class="post-body">
         <div class="info-row">
           <span class="info-label">物件名称：</span>
-          <span class="info-value">{{ post.itemName }}</span>
+          <span class="info-value">{{ safeDisplayItemName(post.itemName) }}</span>
         </div>
 
         <div class="content-section">
@@ -127,10 +131,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { postsAPI, commentsAPI, favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
+import { displayItemName } from '../utils/textCleaner'
+import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation, getLayoutForGrid } from '../utils/imageLayout'
 
 const route = useRoute()
 const postId = computed(() => route.params.id)
@@ -141,6 +147,37 @@ const newComment = ref('')
 const commentAuthor = ref('')
 const isFavorited = ref(false)
 const userSession = getSessionId()
+const imageOrientations = ref({})
+const imageLayouts = ref([])
+
+const detectDetailImagesOrientation = async (images) => {
+  if (!images || images.length === 0) return
+  imageLayouts.value = getLayoutForGrid(images.length)
+  for (let i = 0; i < images.length; i++) {
+    const imgUrl = getImageUrl(images[i])
+    if (imgUrl && !imageOrientations.value[imgUrl]) {
+      try {
+        const orientation = await detectImageOrientationFromUrl(imgUrl)
+        imageOrientations.value[imgUrl] = orientation
+      } catch (e) {
+        imageOrientations.value[imgUrl] = ImageOrientation.SQUARE
+      }
+    }
+  }
+}
+
+const getImgOrientation = (imgUrl) => {
+  return imageOrientations.value[imgUrl] || ImageOrientation.SQUARE
+}
+
+const safeDisplayItemName = (name) => displayItemName(name)
+
+const getImageLayoutClass = (idx) => {
+  if (imageLayouts.value[idx]) {
+    return `layout-${imageLayouts.value[idx].span}`
+  }
+  return 'layout-full'
+}
 
 const getImageUrl = (url) => {
   if (!url) return ''
@@ -195,6 +232,11 @@ const loadPost = async () => {
   try {
     const res = await postsAPI.getDetail(postId.value)
     post.value = res.data
+    nextTick(() => {
+      if (post.value && post.value.images) {
+        detectDetailImagesOrientation(post.value.images)
+      }
+    })
   } catch (e) {
     console.error('加载帖子失败', e)
   }
@@ -299,17 +341,64 @@ onMounted(() => {
   margin: 24px 0;
 }
 
+.post-images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
 .post-image-item {
-  margin-bottom: 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
+  background: #f5f0eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: span 3;
+}
+
+.post-image-item.layout-full { grid-column: span 3; }
+.post-image-item.layout-half { grid-column: span 3; }
+.post-image-item.layout-two-thirds { grid-column: span 2; grid-row: span 2; }
+.post-image-item.layout-third { grid-column: span 1; }
+
+@media (max-width: 768px) {
+  .post-images-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .post-image-item,
+  .post-image-item.layout-full,
+  .post-image-item.layout-half,
+  .post-image-item.layout-two-thirds,
+  .post-image-item.layout-third {
+    grid-column: span 2;
+    grid-row: span 1;
+  }
+}
+
+.post-image-item.img-landscape {
+  aspect-ratio: 16 / 9;
+}
+.post-image-item.img-portrait {
+  aspect-ratio: 3 / 4;
+}
+.post-image-item.img-square {
+  aspect-ratio: 1 / 1;
+}
+.post-image-item.img-detail {
+  aspect-ratio: 4 / 3;
 }
 
 .post-image-item img {
   width: 100%;
-  max-height: 500px;
+  height: 100%;
   object-fit: contain;
-  background: #f9f9f9;
+  background: #faf7f2;
+}
+
+.post-image-item.img-landscape img,
+.post-image-item.img-square img {
+  object-fit: cover;
 }
 
 .post-body {

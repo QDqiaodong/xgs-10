@@ -10,12 +10,12 @@
         :to="`/post/${post.id}`"
         class="post-card card"
       >
-        <div class="post-image">
+        <div :class="['post-image', getCardImageClass(getImageOrientation(post.images && post.images[0] ? getImageUrl(post.images[0]) : ''))]">
           <img :src="post.images && post.images[0] ? getImageUrl(post.images[0]) : 'https://picsum.photos/400/300'" :alt="post.title" />
         </div>
         <div class="post-content">
           <h3 class="post-title">{{ post.title }}</h3>
-          <p class="post-item">物件：{{ post.itemName }}</p>
+          <p class="post-item">物件：{{ safeDisplayItemName(post.itemName) }}</p>
           <p class="post-excerpt">{{ post.content }}</p>
           <div class="post-tags">
             <span class="tag">{{ post.categoryName || '未分类' }}</span>
@@ -41,12 +41,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
+import { displayItemName } from '../utils/textCleaner'
+import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation } from '../utils/imageLayout'
 
 const favorites = ref([])
 const userSession = getSessionId()
+const imageOrientations = ref({})
 
 const getImageUrl = (url) => {
   if (!url) return ''
@@ -55,10 +58,34 @@ const getImageUrl = (url) => {
   return apiBase.replace('/api', '') + url
 }
 
+const detectImagesOrientation = async (postsList) => {
+  if (!postsList || postsList.length === 0) return
+  for (const post of postsList) {
+    if (post.images && post.images.length > 0) {
+      const firstImg = getImageUrl(post.images[0])
+      if (firstImg && !imageOrientations.value[firstImg]) {
+        try {
+          const orientation = await detectImageOrientationFromUrl(firstImg)
+          imageOrientations.value[firstImg] = orientation
+        } catch (e) {
+          imageOrientations.value[firstImg] = ImageOrientation.SQUARE
+        }
+      }
+    }
+  }
+}
+
+const getImageOrientation = (imgUrl) => {
+  return imageOrientations.value[imgUrl] || ImageOrientation.SQUARE
+}
+
+const safeDisplayItemName = (name) => displayItemName(name)
+
 const loadFavorites = async () => {
   try {
     const res = await favoritesAPI.getUserFavorites(userSession)
     favorites.value = res.data
+    nextTick(() => detectImagesOrientation(favorites.value))
   } catch (e) {
     console.error('加载收藏失败', e)
   }
@@ -96,13 +123,28 @@ onMounted(() => {
 .post-image {
   height: 200px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f0eb;
 }
+
+.post-image.img-landscape { height: 180px; }
+.post-image.img-portrait { height: 260px; }
+.post-image.img-square { height: 220px; }
+.post-image.img-detail { height: 180px; }
 
 .post-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.5s;
+  background: #faf7f2;
+}
+
+.post-image.img-landscape img,
+.post-image.img-square img {
+  object-fit: cover;
 }
 
 .post-card:hover .post-image img {

@@ -57,7 +57,7 @@
           :to="`/post/${post.id}`"
           :class="['hot-card', 'card', `card-era-${getEraClass(post.eraName)}`]"
         >
-          <div class="hot-image">
+          <div :class="['hot-image', getCardImageClass(getImageOrientation(post.images && post.images[0] ? getImageUrl(post.images[0]) : ''))]">
             <div :class="['image-overlay', `overlay-${getEraClass(post.eraName)}`]"></div>
             <img :src="post.images && post.images[0] ? getImageUrl(post.images[0]) : 'https://picsum.photos/400/300'" :alt="post.title" />
             <div :class="['era-badge', `badge-${getEraClass(post.eraName)}`]">
@@ -88,7 +88,7 @@
           :to="`/post/${post.id}`"
           :class="['post-card', 'card', `card-era-${getEraClass(post.eraName)}`]"
         >
-          <div class="post-image">
+          <div :class="['post-image', getCardImageClass(getImageOrientation(post.images && post.images[0] ? getImageUrl(post.images[0]) : ''))]">
             <div :class="['image-overlay', `overlay-${getEraClass(post.eraName)}`]"></div>
             <img :src="post.images && post.images[0] ? getImageUrl(post.images[0]) : 'https://picsum.photos/400/300'" :alt="post.title" />
             <div :class="['era-badge', `badge-${getEraClass(post.eraName)}`]">
@@ -98,7 +98,7 @@
           </div>
           <div :class="['post-content', `content-${getEraClass(post.eraName)}`]">
             <h3 :class="['post-title', `title-${getEraClass(post.eraName)}`]">{{ post.title }}</h3>
-            <p :class="['post-item', `item-${getEraClass(post.eraName)}`]">物件：{{ post.itemName }}</p>
+            <p :class="['post-item', `item-${getEraClass(post.eraName)}`]">物件：{{ safeDisplayItemName(post.itemName) }}</p>
             <p class="post-excerpt">{{ post.content }}</p>
             <div class="post-tags">
               <span class="tag tag-cat">{{ post.categoryName }}</span>
@@ -141,9 +141,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { categoriesAPI, erasAPI, postsAPI } from '../api'
+import { displayItemName } from '../utils/textCleaner'
+import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation } from '../utils/imageLayout'
 
 const router = useRouter()
 
@@ -156,6 +158,28 @@ const selectedEra = ref(null)
 const currentPage = ref(0)
 const totalPages = ref(1)
 const pageSize = 10
+const imageOrientations = ref({})
+
+const detectPostImagesOrientation = async (postsList) => {
+  if (!postsList || postsList.length === 0) return
+  for (const post of postsList) {
+    if (post.images && post.images.length > 0) {
+      const firstImg = getImageUrl(post.images[0])
+      if (firstImg && !imageOrientations.value[firstImg]) {
+        try {
+          const orientation = await detectImageOrientationFromUrl(firstImg)
+          imageOrientations.value[firstImg] = orientation
+        } catch (e) {
+          imageOrientations.value[firstImg] = ImageOrientation.SQUARE
+        }
+      }
+    }
+  }
+}
+
+const getImageOrientation = (imgUrl) => {
+  return imageOrientations.value[imgUrl] || ImageOrientation.SQUARE
+}
 
 const getEraClass = (eraName) => {
   if (!eraName) return '80s'
@@ -214,6 +238,7 @@ const loadPosts = async () => {
     })
     posts.value = res.data.content
     totalPages.value = res.data.totalPages
+    nextTick(() => detectPostImagesOrientation(posts.value))
   } catch (e) {
     console.error('加载帖子失败', e)
   }
@@ -223,10 +248,13 @@ const loadHotPosts = async () => {
   try {
     const res = await postsAPI.getHot()
     hotPosts.value = res.data
+    nextTick(() => detectPostImagesOrientation(hotPosts.value))
   } catch (e) {
     console.error('加载热门失败', e)
   }
 }
+
+const safeDisplayItemName = (name) => displayItemName(name)
 
 const toggleCategory = (id) => {
   selectedCategory.value = selectedCategory.value === id ? null : id
@@ -533,14 +561,47 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.hot-image { height: 180px; }
-.post-image { height: 220px; }
+.hot-image {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f0eb;
+}
+.post-image {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f0eb;
+}
+
+.hot-image.img-landscape { height: 170px; }
+.hot-image.img-portrait { height: 220px; }
+.hot-image.img-square { height: 190px; }
+.hot-image.img-detail { height: 170px; }
+
+.post-image.img-landscape { height: 200px; }
+.post-image.img-portrait { height: 280px; }
+.post-image.img-square { height: 240px; }
+.post-image.img-detail { height: 200px; }
 
 .hot-image img, .post-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.5s;
+  background: #faf7f2;
+}
+
+.hot-image.img-landscape img,
+.post-image.img-landscape img {
+  object-fit: cover;
+}
+
+.hot-image.img-square img,
+.post-image.img-square img {
+  object-fit: cover;
 }
 
 .hot-card:hover .hot-image img,

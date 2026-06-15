@@ -8,6 +8,7 @@ import com.nostalgia.repository.CategoryRepository;
 import com.nostalgia.repository.EraRepository;
 import com.nostalgia.repository.PostRepository;
 import com.nostalgia.repository.TimelineEventRepository;
+import com.nostalgia.util.TextCleaner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -110,6 +111,15 @@ public class PostService {
     }
 
     private void populateCategoryAndEraNames(Post post) {
+        if (post.getItemName() != null) {
+            post.setItemName(TextCleaner.safeItemName(post.getItemName()));
+        }
+        if (post.getTitle() != null) {
+            String cleanedTitle = TextCleaner.cleanTitle(post.getTitle());
+            if (!cleanedTitle.isEmpty()) {
+                post.setTitle(cleanedTitle);
+            }
+        }
         if (post.getCategoryId() != null) {
             categoryRepository.findById(post.getCategoryId())
                 .map(Category::getName)
