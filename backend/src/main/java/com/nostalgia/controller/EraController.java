@@ -1,5 +1,6 @@
 package com.nostalgia.controller;
 
+import com.nostalgia.dto.EraTimelineDTO;
 import com.nostalgia.entity.Era;
 import com.nostalgia.service.EraService;
 import lombok.RequiredArgsConstructor;
@@ -20,5 +21,10 @@ public class EraController {
     @GetMapping
     public ResponseEntity<List<Era>> getAllEras() {
         return ResponseEntity.ok(eraService.getAllEras());
+    }
+
+    @GetMapping("/timeline")
+    public ResponseEntity<List<EraTimelineDTO>> getEraTimeline() {
+        return ResponseEntity.ok(eraService.getEraTimeline());
     }
 }

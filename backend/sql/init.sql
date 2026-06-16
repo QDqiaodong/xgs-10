@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS eras (
     name VARCHAR(50) NOT NULL UNIQUE,
     year_start INT,
     year_end INT,
+    description TEXT,
+    icon VARCHAR(20),
+    color_scheme VARCHAR(100),
+    representative_categories VARCHAR(255),
     sort_order INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_name (name)
@@ -96,12 +100,12 @@ INSERT INTO categories (name, icon, sort_order) VALUES
 ('食品饮料', '�', 7),
 ('日常用品', '🪑', 8);
 
-INSERT INTO eras (name, year_start, year_end, sort_order) VALUES
-('60年代', 1960, 1969, 1),
-('70年代', 1970, 1979, 2),
-('80年代', 1980, 1989, 3),
-('90年代', 1990, 1999, 4),
-('00年代', 2000, 2009, 5);
+INSERT INTO eras (name, year_start, year_end, description, icon, color_scheme, representative_categories, sort_order) VALUES
+('60年代', 1960, 1969, '艰苦奋斗的岁月，物资虽匮乏但精神富足，充满理想主义色彩。缝纫机、搪瓷杯、军绿挎包是这个年代的生活符号。', '★', '#5d4037:#d7ccc8:#ffe082', '日常用品,服饰配饰,文具书籍', 1),
+('70年代', 1970, 1979, '改革开放的前夜，喇叭裤、的确良衬衫开始流行，双卡录音机和黑白电视进入少数家庭。', '✿', '#8d6e63:#ffcc80:#fff59d', '影音设备,服饰配饰,食品饮料', 2),
+('80年代', 1980, 1989, '改革开放浪潮涌动，流行文化蓬勃发展。邓丽君的歌声、琼瑶的小说、铁皮玩具、任天堂红白机承载了无数童年记忆。', '♪', '#1976d2:#90caf9:#e3f2fd', '家用电器,影音设备,玩具玩偶', 3),
+('90年代', 1990, 1999, '市场化浪潮席卷全国，港台文化成为主流。BP机、大哥大、CD随身听、小霸王学习机是那个时代的科技象征。', '⚡', '#ff6f00:#ffab40:#fff8e1', '通讯工具,影音设备,玩具玩偶', 4),
+('00年代', 2000, 2009, '互联网时代的开启，MP3、数码相机、智能手机逐渐普及。超级女声、周杰伦、QQ聊天记录着青春的印记。', '◈', '#00acc1:#80deea:#e0f7fa', '通讯工具,影音设备,日常用品', 5);
 
 INSERT INTO posts (title, item_name, content, story, memory, era_background, current_status, preservation_status, story_summary, images, category_id, era_id, view_count, author_name) VALUES
 ('老黑白电视机的回忆', '黑白电视机', '这是一台80年代的黑白电视机，还记得小时候全村人围在一起看西游记的场景吗？', '这台电视是爸爸当年攒了三个月工资买的，当时是村里第一台电视。', '每到傍晚，院子里就坐满了人，大家自带小板凳，那种热闹的感觉再也找不到了。', '80年代中国电视机开始进入普通家庭，但对于大多数农村家庭来说仍是奢侈品。一台14寸黑白电视售价约400元，相当于普通工人三四个月的工资。当时电视台节目有限，每晚黄金时段的电视剧是全村人最重要的娱乐活动。', '2005年搬家时送给了老家亲戚，据说至今仍能正常开机收看，偶尔还会被拿出来播放老录像带，成为家族怀旧聚会的焦点。', '完好保存', '1985年父亲花三个月工资购入的全村第一台黑白电视，承载着全村人围看西游记的集体记忆，至今仍能正常使用。', '["https://picsum.photos/seed/tv1/600/400","https://picsum.photos/seed/tv2/600/400"]', 2, 3, 128, '老张'),

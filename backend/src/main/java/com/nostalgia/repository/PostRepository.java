@@ -24,6 +24,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     List<Post> findTop10ByOrderByViewCountDesc();
 
+    @Query("SELECT COUNT(p) FROM Post p WHERE p.eraId = :eraId")
+    long countByEraId(@Param("eraId") Long eraId);
+
+    @Query("SELECT p FROM Post p WHERE p.eraId = :eraId ORDER BY p.viewCount DESC, p.createdAt DESC")
+    List<Post> findTopByEraIdOrderByViewCountDesc(@Param("eraId") Long eraId, Pageable pageable);
+
     @Modifying
     @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
     void incrementViewCount(@Param("id") Long id);

@@ -12,6 +12,68 @@
       </div>
     </section>
 
+    <section class="timeline-section">
+      <h2 class="section-title timeline-title">
+        <span class="title-icon">⏳</span>
+        年代时间廊
+        <span class="title-subtitle">穿越时光，重温那些年的美好记忆</span>
+      </h2>
+      <div class="timeline-container">
+        <div class="timeline-track">
+          <div
+            v-for="(era, index) in eraTimeline"
+            :key="era.id"
+            :class="['timeline-card', `timeline-era-${getEraClass(era.name)}`]"
+            @click="selectTimelineEra(era.id)"
+          >
+            <div class="timeline-connector" v-if="index < eraTimeline.length - 1">
+              <div class="connector-line"></div>
+              <div class="connector-dot"></div>
+            </div>
+            <div class="timeline-header">
+              <div class="timeline-era-icon">{{ era.icon || getEraIcon(era.name) }}</div>
+              <div class="timeline-era-info">
+                <h3 class="timeline-era-name">{{ era.name }}</h3>
+                <span class="timeline-era-years">{{ era.yearStart }} - {{ era.yearEnd }}</span>
+              </div>
+              <div class="timeline-post-count">
+                <span class="count-num">{{ era.postCount }}</span>
+                <span class="count-label">件珍藏</span>
+              </div>
+            </div>
+            <p class="timeline-description">{{ era.description }}</p>
+            <div class="timeline-categories" v-if="era.representativeCategories">
+              <span
+                v-for="cat in era.representativeCategories.split(',')"
+                :key="cat"
+                class="timeline-cat-tag"
+              >
+                {{ cat }}
+              </span>
+            </div>
+            <div class="timeline-preview" v-if="era.representativePosts && era.representativePosts.length > 0">
+              <router-link
+                v-for="post in era.representativePosts.slice(0, 3)"
+                :key="post.id"
+                :to="`/post/${post.id}`"
+                class="timeline-preview-item"
+                @click.stop
+              >
+                <img
+                  :src="post.images && post.images[0] ? getImageUrl(post.images[0]) : 'https://picsum.photos/120/120'"
+                  :alt="post.title"
+                />
+              </router-link>
+            </div>
+            <div class="timeline-enter">
+              <span>进入时光</span>
+              <span class="enter-arrow">→</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="filter-section card">
       <div class="filter-group">
         <span class="filter-label">品类筛选：</span>
@@ -159,6 +221,7 @@ const router = useRouter()
 
 const categories = ref([])
 const eras = ref([])
+const eraTimeline = ref([])
 const posts = ref([])
 const hotPosts = ref([])
 const selectedCategory = ref(null)
@@ -235,6 +298,28 @@ const loadEras = async () => {
   }
 }
 
+const loadEraTimeline = async () => {
+  try {
+    const res = await erasAPI.getTimeline()
+    eraTimeline.value = res.data
+  } catch (e) {
+    console.error('加载年代时间廊失败', e)
+  }
+}
+
+const selectTimelineEra = (eraId) => {
+  selectedEra.value = eraId
+  selectedCategory.value = null
+  currentPage.value = 0
+  loadPosts()
+  setTimeout(() => {
+    const filterSection = document.querySelector('.filter-section')
+    if (filterSection) {
+      filterSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, 100)
+}
+
 const loadPosts = async () => {
   try {
     const res = await postsAPI.getList({
@@ -286,6 +371,7 @@ const changePage = (page) => {
 onMounted(() => {
   loadCategories()
   loadEras()
+  loadEraTimeline()
   loadPosts()
   loadHotPosts()
 })
@@ -996,7 +1082,434 @@ onMounted(() => {
   color: #666;
 }
 
+.timeline-section {
+  margin-bottom: 40px;
+}
+
+.timeline-title {
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.title-subtitle {
+  font-size: 14px;
+  color: #999;
+  font-weight: normal;
+  margin-left: 12px;
+}
+
+.timeline-container {
+  overflow-x: auto;
+  padding: 10px 4px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #d4a574 #f5e6d3;
+}
+
+.timeline-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.timeline-container::-webkit-scrollbar-track {
+  background: #f5e6d3;
+  border-radius: 4px;
+}
+
+.timeline-container::-webkit-scrollbar-thumb {
+  background: #d4a574;
+  border-radius: 4px;
+}
+
+.timeline-track {
+  display: flex;
+  gap: 20px;
+  padding-right: 20px;
+  min-width: min-content;
+}
+
+.timeline-card {
+  position: relative;
+  flex: 0 0 260px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 20px 20px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid transparent;
+  overflow: hidden;
+}
+
+.timeline-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  opacity: 0.8;
+}
+
+.timeline-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 16px 40px rgba(93, 78, 55, 0.2);
+}
+
+.timeline-era-60s {
+  border-color: rgba(93, 64, 55, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #faf6f2 100%);
+}
+.timeline-era-60s::before { background: linear-gradient(90deg, #5d4037, #8d6e63); }
+.timeline-era-60s:hover { border-color: #5d4037; }
+
+.timeline-era-70s {
+  border-color: rgba(141, 110, 99, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #fff8ed 100%);
+}
+.timeline-era-70s::before { background: linear-gradient(90deg, #bf360c, #ff8f00); }
+.timeline-era-70s:hover { border-color: #bf360c; }
+
+.timeline-era-80s {
+  border-color: rgba(25, 118, 210, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #f0f7fe 100%);
+}
+.timeline-era-80s::before { background: linear-gradient(90deg, #1976d2, #42a5f5); }
+.timeline-era-80s:hover { border-color: #1976d2; }
+
+.timeline-era-90s {
+  border-color: rgba(255, 111, 0, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #fff5ed 100%);
+}
+.timeline-era-90s::before { background: linear-gradient(90deg, #ff6f00, #ffab40); }
+.timeline-era-90s:hover { border-color: #ff6f00; }
+
+.timeline-era-00s {
+  border-color: rgba(0, 172, 193, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #edfafb 100%);
+}
+.timeline-era-00s::before { background: linear-gradient(90deg, #00acc1, #4dd0e1); }
+.timeline-era-00s:hover { border-color: #00acc1; }
+
+.timeline-connector {
+  position: absolute;
+  top: 30px;
+  right: -20px;
+  width: 20px;
+  height: 2px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
+.connector-line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, #d4a574, transparent);
+}
+
+.connector-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d4a574;
+  flex-shrink: 0;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.timeline-era-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.timeline-era-60s .timeline-era-icon {
+  background: linear-gradient(135deg, #d7ccc8, #bcaaa4);
+  color: #3e2723;
+  box-shadow: 0 2px 8px rgba(93, 64, 55, 0.2);
+}
+
+.timeline-era-70s .timeline-era-icon {
+  background: linear-gradient(135deg, #ffcc80, #ffb74d);
+  color: #4e342e;
+  box-shadow: 0 2px 8px rgba(191, 54, 12, 0.2);
+}
+
+.timeline-era-80s .timeline-era-icon {
+  background: linear-gradient(135deg, #90caf9, #64b5f6);
+  color: #0d47a1;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.25);
+}
+
+.timeline-era-90s .timeline-era-icon {
+  background: linear-gradient(135deg, #ffab40, #ff9100);
+  color: #bf360c;
+  box-shadow: 0 2px 8px rgba(255, 111, 0, 0.25);
+}
+
+.timeline-era-00s .timeline-era-icon {
+  background: linear-gradient(135deg, #80deea, #4dd0e1);
+  color: #006064;
+  box-shadow: 0 2px 8px rgba(0, 172, 193, 0.25);
+}
+
+.timeline-era-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-era-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.timeline-era-60s .timeline-era-name {
+  color: #3e2723;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  letter-spacing: 1px;
+}
+
+.timeline-era-70s .timeline-era-name {
+  color: #5d4037;
+  font-family: 'STFangsong', 'FangSong', serif;
+}
+
+.timeline-era-80s .timeline-era-name {
+  color: #0d47a1;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+
+.timeline-era-90s .timeline-era-name {
+  color: #bf360c;
+  letter-spacing: 0.5px;
+}
+
+.timeline-era-00s .timeline-era-name {
+  color: #006064;
+  font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+  font-weight: 600;
+}
+
+.timeline-era-years {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+  display: block;
+}
+
+.timeline-post-count {
+  text-align: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.timeline-era-60s .timeline-post-count {
+  background: #efebe9;
+}
+
+.timeline-era-70s .timeline-post-count {
+  background: #fff3e0;
+}
+
+.timeline-era-80s .timeline-post-count {
+  background: #e3f2fd;
+}
+
+.timeline-era-90s .timeline-post-count {
+  background: #fff3e0;
+}
+
+.timeline-era-00s .timeline-post-count {
+  background: #e0f7fa;
+}
+
+.count-num {
+  font-size: 18px;
+  font-weight: 700;
+  display: block;
+  line-height: 1;
+}
+
+.timeline-era-60s .count-num { color: #5d4037; }
+.timeline-era-70s .count-num { color: #bf360c; }
+.timeline-era-80s .count-num { color: #1976d2; }
+.timeline-era-90s .count-num { color: #ff6f00; }
+.timeline-era-00s .count-num { color: #00acc1; }
+
+.count-label {
+  font-size: 10px;
+  color: #999;
+}
+
+.timeline-description {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.timeline-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.timeline-cat-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: #f5e6d3;
+  color: #8b6914;
+  font-weight: 500;
+}
+
+.timeline-era-60s .timeline-cat-tag {
+  background: #d7ccc8;
+  color: #3e2723;
+}
+
+.timeline-era-70s .timeline-cat-tag {
+  background: #ffcc80;
+  color: #4e342e;
+}
+
+.timeline-era-80s .timeline-cat-tag {
+  background: #90caf9;
+  color: #0d47a1;
+}
+
+.timeline-era-90s .timeline-cat-tag {
+  background: #ffab40;
+  color: #bf360c;
+}
+
+.timeline-era-00s .timeline-cat-tag {
+  background: #80deea;
+  color: #006064;
+}
+
+.timeline-preview {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.timeline-preview-item {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: transform 0.3s;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.timeline-preview-item:hover {
+  transform: scale(1.1);
+  z-index: 2;
+}
+
+.timeline-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.timeline-enter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.timeline-era-60s .timeline-enter {
+  background: #efebe9;
+  color: #5d4037;
+}
+.timeline-era-60s:hover .timeline-enter {
+  background: linear-gradient(135deg, #6d4c41, #4e342e);
+  color: #fff;
+}
+
+.timeline-era-70s .timeline-enter {
+  background: #fff3e0;
+  color: #bf360c;
+}
+.timeline-era-70s:hover .timeline-enter {
+  background: linear-gradient(135deg, #bf360c, #8d6e63);
+  color: #fff;
+}
+
+.timeline-era-80s .timeline-enter {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+.timeline-era-80s:hover .timeline-enter {
+  background: linear-gradient(135deg, #1976d2, #0d47a1);
+  color: #fff;
+}
+
+.timeline-era-90s .timeline-enter {
+  background: #fff3e0;
+  color: #ff6f00;
+}
+.timeline-era-90s:hover .timeline-enter {
+  background: linear-gradient(135deg, #ff6f00, #e64a19);
+  color: #fff;
+}
+
+.timeline-era-00s .timeline-enter {
+  background: #e0f7fa;
+  color: #00acc1;
+}
+.timeline-era-00s:hover .timeline-enter {
+  background: linear-gradient(135deg, #00acc1, #006064);
+  color: #fff;
+}
+
+.enter-arrow {
+  transition: transform 0.3s;
+}
+
+.timeline-card:hover .enter-arrow {
+  transform: translateX(4px);
+}
+
 @media (max-width: 768px) {
+  .timeline-card {
+    flex: 0 0 240px;
+  }
+  .timeline-connector {
+    display: none;
+  }
+  .title-subtitle {
+    margin-left: 0;
+    margin-top: 4px;
+    width: 100%;
+  }
   .hot-grid {
     grid-template-columns: 1fr;
   }

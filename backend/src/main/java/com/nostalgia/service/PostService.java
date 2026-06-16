@@ -112,6 +112,10 @@ public class PostService {
         return savedPost;
     }
 
+    public void populateCategoryAndEraNamesExternal(Post post) {
+        populateCategoryAndEraNames(post);
+    }
+
     private void populateCategoryAndEraNames(Post post) {
         if (post.getItemName() != null) {
             post.setItemName(TextCleaner.safeItemName(post.getItemName()));

@@ -24,6 +24,18 @@ public class Era {
     @Column(name = "year_end")
     private Integer yearEnd;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(length = 20)
+    private String icon;
+
+    @Column(name = "color_scheme", length = 100)
+    private String colorScheme;
+
+    @Column(name = "representative_categories", length = 255)
+    private String representativeCategories;
+
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
 
