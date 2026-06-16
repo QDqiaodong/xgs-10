@@ -139,7 +139,10 @@ public class PostService {
         if (post.getStorySummary() == null || post.getStorySummary().isBlank()) {
             String content = post.getContent() != null ? post.getContent() : "";
             String story = post.getStory() != null ? post.getStory() : "";
-            String combined = (content + " " + story).trim();
+            String memory = post.getMemory() != null ? post.getMemory() : "";
+            String eraBackground = post.getEraBackground() != null ? post.getEraBackground() : "";
+            String currentStatus = post.getCurrentStatus() != null ? post.getCurrentStatus() : "";
+            String combined = (content + " " + story + " " + memory + " " + eraBackground + " " + currentStatus).trim();
             if (combined.length() > 200) {
                 post.setStorySummary(combined.substring(0, 200) + "...");
             } else {

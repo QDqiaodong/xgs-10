@@ -47,19 +47,46 @@
           <p class="summary-text">{{ post.storySummary }}</p>
         </div>
 
-        <div class="content-section">
-          <h3 class="section-title">📝 物件介绍</h3>
-          <p class="content-text">{{ post.content }}</p>
-        </div>
+        <div class="story-layers">
+          <div class="story-layer" v-if="post.story">
+            <div class="story-layer-header">
+              <span class="story-layer-icon">🎁</span>
+              <h3 class="story-layer-title">物件来历</h3>
+            </div>
+            <p class="story-layer-content">{{ post.story }}</p>
+          </div>
 
-        <div class="content-section" v-if="post.story">
-          <h3 class="section-title">📖 物件来历</h3>
-          <p class="content-text">{{ post.story }}</p>
-        </div>
+          <div class="story-layer" v-if="post.memory">
+            <div class="story-layer-header">
+              <span class="story-layer-icon">💭</span>
+              <h3 class="story-layer-title">使用记忆</h3>
+            </div>
+            <p class="story-layer-content">{{ post.memory }}</p>
+          </div>
 
-        <div class="content-section" v-if="post.memory">
-          <h3 class="section-title">💭 个人回忆</h3>
-          <p class="content-text">{{ post.memory }}</p>
+          <div class="story-layer" v-if="post.eraBackground">
+            <div class="story-layer-header">
+              <span class="story-layer-icon">🏛️</span>
+              <h3 class="story-layer-title">时代背景</h3>
+            </div>
+            <p class="story-layer-content">{{ post.eraBackground }}</p>
+          </div>
+
+          <div class="story-layer" v-if="post.currentStatus">
+            <div class="story-layer-header">
+              <span class="story-layer-icon">📍</span>
+              <h3 class="story-layer-title">现状</h3>
+            </div>
+            <p class="story-layer-content">{{ post.currentStatus }}</p>
+          </div>
+
+          <div class="story-layer" v-if="post.content && !post.story && !post.memory && !post.eraBackground && !post.currentStatus">
+            <div class="story-layer-header">
+              <span class="story-layer-icon">📝</span>
+              <h3 class="story-layer-title">物件介绍</h3>
+            </div>
+            <p class="story-layer-content">{{ post.content }}</p>
+          </div>
         </div>
 
         <div class="content-section" v-if="post.timelineEvents && post.timelineEvents.length > 0">
@@ -535,6 +562,79 @@ onMounted(() => {
   white-space: pre-wrap;
 }
 
+.story-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.story-layer {
+  background: #fdf6e3;
+  border-radius: 12px;
+  padding: 20px 24px;
+  border-left: 4px solid #d4a574;
+  transition: all 0.3s ease;
+}
+
+.story-layer:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(139, 105, 20, 0.1);
+}
+
+.story-layer:nth-child(1) {
+  border-left-color: #52c41a;
+  background: linear-gradient(135deg, #f6ffed 0%, #fcffe6 100%);
+}
+
+.story-layer:nth-child(2) {
+  border-left-color: #1890ff;
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+}
+
+.story-layer:nth-child(3) {
+  border-left-color: #722ed1;
+  background: linear-gradient(135deg, #f9f0ff 0%, #faf5ff 100%);
+}
+
+.story-layer:nth-child(4) {
+  border-left-color: #fa8c16;
+  background: linear-gradient(135deg, #fff7e6 0%, #fffaf0 100%);
+}
+
+.story-layer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.story-layer-icon {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+}
+
+.story-layer-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #5d4e37;
+  margin: 0;
+}
+
+.story-layer-content {
+  font-size: 15px;
+  line-height: 1.85;
+  color: #5d4e37;
+  white-space: pre-wrap;
+  margin: 0;
+  padding-left: 46px;
+}
+
 .post-footer {
   display: flex;
   justify-content: space-between;
@@ -809,6 +909,12 @@ onMounted(() => {
   }
   .timeline-line {
     left: 13px;
+  }
+  .story-layer {
+    padding: 16px;
+  }
+  .story-layer-content {
+    padding-left: 0;
   }
 }
 </style>

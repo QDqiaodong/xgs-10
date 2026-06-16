@@ -34,6 +34,12 @@ public class Post {
     @Column(columnDefinition = "TEXT")
     private String memory;
 
+    @Column(name = "era_background", columnDefinition = "TEXT")
+    private String eraBackground;
+
+    @Column(name = "current_status", columnDefinition = "TEXT")
+    private String currentStatus;
+
     @Column(name = "preservation_status", length = 50)
     private String preservationStatus;
 

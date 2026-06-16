@@ -138,10 +138,28 @@
           </div>
 
           <div class="form-group">
-            <label>个人回忆</label>
+            <label>使用记忆</label>
             <textarea
               v-model="form.memory"
-              placeholder="看到它你想起了什么？分享你的个人回忆..."
+              placeholder="看到它你想起了什么？分享你的个人回忆和使用经历..."
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>时代背景</label>
+            <textarea
+              v-model="form.eraBackground"
+              placeholder="这个物件所处年代的社会背景、物价水平、流行文化等..."
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>现状</label>
+            <textarea
+              v-model="form.currentStatus"
+              placeholder="这个物件现在在哪里？保存情况如何？还在使用吗？"
               rows="3"
             ></textarea>
           </div>
@@ -262,7 +280,9 @@ const form = reactive({
   storySummary: '',
   content: '',
   story: '',
-  memory: ''
+  memory: '',
+  eraBackground: '',
+  currentStatus: ''
 })
 
 const cleanedItemName = computed(() => cleanItemName(form.itemName))
@@ -385,6 +405,8 @@ const handleSubmit = async () => {
     formData.append('content', form.content)
     if (form.story) formData.append('story', form.story)
     if (form.memory) formData.append('memory', form.memory)
+    if (form.eraBackground) formData.append('eraBackground', form.eraBackground)
+    if (form.currentStatus) formData.append('currentStatus', form.currentStatus)
 
     if (timelineEvents.value.length > 0) {
       const validEvents = timelineEvents.value.map(e => ({

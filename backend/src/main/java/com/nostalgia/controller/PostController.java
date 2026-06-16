@@ -51,6 +51,8 @@ public class PostController {
             @RequestParam String content,
             @RequestParam(required = false) String story,
             @RequestParam(required = false) String memory,
+            @RequestParam(required = false) String eraBackground,
+            @RequestParam(required = false) String currentStatus,
             @RequestParam(required = false) String preservationStatus,
             @RequestParam(required = false) String storySummary,
             @RequestParam Long categoryId,
@@ -72,6 +74,8 @@ public class PostController {
         post.setContent(content != null ? content.trim() : null);
         post.setStory(story != null && !story.isBlank() ? story.trim() : null);
         post.setMemory(memory != null && !memory.isBlank() ? memory.trim() : null);
+        post.setEraBackground(eraBackground != null && !eraBackground.isBlank() ? eraBackground.trim() : null);
+        post.setCurrentStatus(currentStatus != null && !currentStatus.isBlank() ? currentStatus.trim() : null);
         post.setPreservationStatus(preservationStatus != null && !preservationStatus.isBlank() ? preservationStatus.trim() : null);
         post.setStorySummary(storySummary != null && !storySummary.isBlank() ? storySummary.trim() : null);
         post.setCategoryId(categoryId);
