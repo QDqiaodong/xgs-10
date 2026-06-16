@@ -6,7 +6,10 @@
       <header class="post-header">
         <h1 class="post-title">{{ post.title }}</h1>
         <div class="post-meta">
-          <span class="tag">{{ post.categoryName }}</span>
+          <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
+            <CategoryIcon :category="post.categoryName" size="xs" />
+            {{ post.categoryName }}
+          </span>
           <span class="tag">{{ post.eraName }}</span>
           <span class="author">作者：{{ post.authorName }}</span>
           <span class="date">{{ formatDate(post.createdAt) }}</span>
@@ -178,6 +181,7 @@ import { postsAPI, commentsAPI, favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
 import { displayItemName } from '../utils/textCleaner'
 import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation, getLayoutForGrid } from '../utils/imageLayout'
+import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
 
 const route = useRoute()
 const postId = computed(() => route.params.id)

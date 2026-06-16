@@ -63,10 +63,11 @@
         <button
           v-for="cat in categories"
           :key="cat.id"
-          :class="['filter-btn', 'filter-cat', { active: selectedCategory === cat.id }]"
+          :class="['filter-btn', 'filter-cat', getCategoryClass(cat.name), { active: selectedCategory === cat.id }]"
+          :style="getCategoryStyleVars(cat.name)"
           @click="selectedCategory = cat.id"
         >
-          <span class="cat-icon">{{ cat.icon }}</span>
+          <CategoryIcon :category="cat.name" size="sm" mode="emoji" />
           {{ cat.name }}
         </button>
       </div>
@@ -97,8 +98,8 @@
             :key="catGroup.categoryId"
             class="category-section"
           >
-            <div class="category-header">
-              <span class="category-icon">{{ catGroup.categoryIcon }}</span>
+            <div class="category-header" :class="getCategoryClass(catGroup.categoryName)" :style="getCategoryStyleVars(catGroup.categoryName)">
+              <CategoryIcon :category="catGroup.categoryName" size="lg" mode="emoji" show-bg />
               <h3 class="category-name">{{ catGroup.categoryName }}</h3>
               <span class="category-count">{{ catGroup.count }} 件</span>
             </div>
@@ -126,7 +127,10 @@
                   <p class="item-summary">{{ item.storySummary || '暂无故事摘要' }}</p>
                   <div class="item-footer">
                     <span class="item-tags">
-                      <span class="tag tag-cat">{{ item.categoryName }}</span>
+                      <span :class="['tag', 'tag-cat', getCategoryClass(item.categoryName)]" :style="getCategoryStyleVars(item.categoryName)">
+                        <CategoryIcon :category="item.categoryName" size="xs" />
+                        {{ item.categoryName }}
+                      </span>
                       <span :class="['tag', `tag-era-${getEraClass(item.eraName)}`]">{{ item.eraName }}</span>
                     </span>
                   </div>
@@ -183,7 +187,10 @@
             <p class="item-summary">{{ item.storySummary || '暂无故事摘要' }}</p>
             <div class="item-footer">
               <span class="item-tags">
-                <span class="tag tag-cat">{{ item.categoryName }}</span>
+                <span :class="['tag', 'tag-cat', getCategoryClass(item.categoryName)]" :style="getCategoryStyleVars(item.categoryName)">
+                  <CategoryIcon :category="item.categoryName" size="xs" />
+                  {{ item.categoryName }}
+                </span>
                 <span :class="['tag', `tag-era-${getEraClass(item.eraName)}`]">{{ item.eraName }}</span>
               </span>
             </div>
@@ -221,6 +228,7 @@
 import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { archivesAPI } from '../api'
 import { displayItemName } from '../utils/textCleaner'
+import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
 
 const eras = ref([])
 const categories = ref([])

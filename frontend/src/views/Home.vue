@@ -18,10 +18,11 @@
         <button
           v-for="cat in categories"
           :key="cat.id"
-          :class="['filter-btn', 'filter-cat', { active: selectedCategory === cat.id }]"
+          :class="['filter-btn', 'filter-cat', getCategoryClass(cat.name), { active: selectedCategory === cat.id }]"
+          :style="getCategoryStyleVars(cat.name)"
           @click="toggleCategory(cat.id)"
         >
-          <span class="cat-icon">{{ cat.icon }}</span>
+          <CategoryIcon :category="cat.name" size="sm" mode="emoji" />
           {{ cat.name }}
         </button>
         <button v-if="selectedCategory" class="filter-btn clear" @click="selectedCategory = null">
@@ -67,7 +68,10 @@
           <div :class="['hot-content', `content-${getEraClass(post.eraName)}`]">
             <h3 :class="['hot-title', `title-${getEraClass(post.eraName)}`]">{{ post.title }}</h3>
             <div class="hot-meta">
-              <span class="tag tag-cat">{{ post.categoryName }}</span>
+              <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
+                <CategoryIcon :category="post.categoryName" size="xs" />
+                {{ post.categoryName }}
+              </span>
               <span :class="['tag', `tag-era-${getEraClass(post.eraName)}`]">{{ post.eraName }}</span>
             </div>
             <p class="hot-views">👁 {{ post.viewCount }} 次浏览</p>
@@ -101,7 +105,10 @@
             <p :class="['post-item', `item-${getEraClass(post.eraName)}`]">物件：{{ safeDisplayItemName(post.itemName) }}</p>
             <p class="post-excerpt">{{ post.content }}</p>
             <div class="post-tags">
-              <span class="tag tag-cat">{{ post.categoryName }}</span>
+              <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
+                <CategoryIcon :category="post.categoryName" size="xs" />
+                {{ post.categoryName }}
+              </span>
               <span :class="['tag', `tag-era-${getEraClass(post.eraName)}`]">{{ post.eraName }}</span>
             </div>
             <div :class="['post-footer', `footer-${getEraClass(post.eraName)}`]">
@@ -146,6 +153,7 @@ import { useRouter } from 'vue-router'
 import { categoriesAPI, erasAPI, postsAPI } from '../api'
 import { displayItemName } from '../utils/textCleaner'
 import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation } from '../utils/imageLayout'
+import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
 
 const router = useRouter()
 

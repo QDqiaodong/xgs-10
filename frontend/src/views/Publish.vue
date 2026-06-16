@@ -66,7 +66,7 @@
               <select v-model="form.categoryId" required>
                 <option value="">请选择品类</option>
                 <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                  {{ cat.icon }} {{ cat.name }}
+                  {{ getCategoryIcon(cat.name) }} {{ cat.name }}
                 </option>
               </select>
             </div>
@@ -260,6 +260,7 @@ import { useRouter } from 'vue-router'
 import { categoriesAPI, erasAPI, postsAPI } from '../api'
 import { processImage, createImagePreview } from '../utils/imageProcessor'
 import { cleanItemName, cleanTitle } from '../utils/textCleaner'
+import { getCategoryIcon } from '../icons/categories'
 
 const router = useRouter()
 

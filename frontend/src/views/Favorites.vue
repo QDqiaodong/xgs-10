@@ -18,7 +18,10 @@
           <p class="post-item">物件：{{ safeDisplayItemName(post.itemName) }}</p>
           <p class="post-excerpt">{{ post.content }}</p>
           <div class="post-tags">
-            <span class="tag">{{ post.categoryName || '未分类' }}</span>
+            <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
+              <CategoryIcon :category="post.categoryName" size="xs" />
+              {{ post.categoryName || '未分类' }}
+            </span>
             <span class="tag">{{ post.eraName || '未知年代' }}</span>
           </div>
           <div class="post-footer">
@@ -46,6 +49,7 @@ import { favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
 import { displayItemName } from '../utils/textCleaner'
 import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation } from '../utils/imageLayout'
+import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
 
 const favorites = ref([])
 const userSession = getSessionId()
