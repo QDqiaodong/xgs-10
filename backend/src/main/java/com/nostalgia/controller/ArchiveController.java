@@ -118,25 +118,6 @@ public class ArchiveController {
     }
 
     private void normalizePost(Post post) {
-        if (post.getItemName() != null) {
-            post.setItemName(TextCleaner.safeItemName(post.getItemName()));
-        }
-        if (post.getTitle() != null) {
-            String cleanedTitle = TextCleaner.cleanTitle(post.getTitle());
-            if (!cleanedTitle.isEmpty()) {
-                post.setTitle(cleanedTitle);
-            }
-        }
-        if (post.getStorySummary() == null || post.getStorySummary().isBlank()) {
-            String content = post.getContent() != null ? post.getContent() : "";
-            String story = post.getStory() != null ? post.getStory() : "";
-            String combined = (content + " " + story).trim();
-            if (combined.length() > 200) {
-                post.setStorySummary(combined.substring(0, 200) + "...");
-            } else {
-                post.setStorySummary(combined);
-            }
-        }
         if (post.getPreservationStatus() == null || post.getPreservationStatus().isBlank()) {
             post.setPreservationStatus("待评估");
         }

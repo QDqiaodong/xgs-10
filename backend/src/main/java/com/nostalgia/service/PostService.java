@@ -91,7 +91,7 @@ public class PostService {
                 String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
                 Path filePath = uploadDir.resolve(fileName);
                 Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                imageUrls.add("/uploads/" + fileName);
+                imageUrls.add("/api/uploads/" + fileName);
             }
             post.setImages(imageUrls);
         }
@@ -107,6 +107,8 @@ public class PostService {
             timelineEventRepository.saveAll(timelineEvents);
         }
 
+        populateStorySummary(savedPost);
+        populateCategoryAndEraNames(savedPost);
         return savedPost;
     }
 
@@ -129,6 +131,20 @@ public class PostService {
             eraRepository.findById(post.getEraId())
                 .map(Era::getName)
                 .ifPresent(post::setEraName);
+        }
+        populateStorySummary(post);
+    }
+
+    private void populateStorySummary(Post post) {
+        if (post.getStorySummary() == null || post.getStorySummary().isBlank()) {
+            String content = post.getContent() != null ? post.getContent() : "";
+            String story = post.getStory() != null ? post.getStory() : "";
+            String combined = (content + " " + story).trim();
+            if (combined.length() > 200) {
+                post.setStorySummary(combined.substring(0, 200) + "...");
+            } else {
+                post.setStorySummary(combined);
+            }
         }
     }
 

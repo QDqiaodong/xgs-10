@@ -170,11 +170,16 @@ const detectDetailImagesOrientation = async (images) => {
   for (let i = 0; i < images.length; i++) {
     const imgUrl = getImageUrl(images[i])
     if (imgUrl && !imageOrientations.value[imgUrl]) {
-      try {
-        const orientation = await detectImageOrientationFromUrl(imgUrl)
-        imageOrientations.value[imgUrl] = orientation
-      } catch (e) {
-        imageOrientations.value[imgUrl] = ImageOrientation.SQUARE
+      const layout = imageLayouts.value[i]
+      if (layout && layout.orientation) {
+        imageOrientations.value[imgUrl] = layout.orientation
+      } else {
+        try {
+          const orientation = await detectImageOrientationFromUrl(imgUrl)
+          imageOrientations.value[imgUrl] = orientation
+        } catch (e) {
+          imageOrientations.value[imgUrl] = ImageOrientation.SQUARE
+        }
       }
     }
   }
@@ -196,8 +201,7 @@ const getImageLayoutClass = (idx) => {
 const getImageUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  const apiBase = import.meta.env.VITE_API_BASE_URL || ''
-  return apiBase.replace('/api', '') + url
+  return url
 }
 
 const formatDate = (dateStr) => {

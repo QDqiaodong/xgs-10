@@ -206,8 +206,7 @@ const getEraIcon = (eraName) => {
 const getImageUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  const apiBase = import.meta.env.VITE_API_BASE_URL || ''
-  return apiBase.replace('/api', '') + url
+  return url
 }
 
 const loadCategories = async () => {
