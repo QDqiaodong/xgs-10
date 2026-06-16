@@ -113,7 +113,7 @@
               >
                 <div class="item-image-wrapper">
                   <img
-                    :src="item.images && item.images[0] ? getImageUrl(item.images[0]) : 'https://picsum.photos/400/300'"
+                    :src="getItemImgUrl(item.images)"
                     :alt="item.itemName"
                     class="item-image"
                   />
@@ -173,7 +173,7 @@
         >
           <div class="item-image-wrapper">
             <img
-              :src="item.images && item.images[0] ? getImageUrl(item.images[0]) : 'https://picsum.photos/400/300'"
+              :src="getItemImgUrl(item.images)"
               :alt="item.itemName"
               class="item-image"
             />
@@ -229,6 +229,8 @@ import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { archivesAPI } from '../api'
 import { displayItemName } from '../utils/textCleaner'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
+import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
+import { getImageUrl, getMainImage } from '../utils/imageLayout'
 
 const eras = ref([])
 const categories = ref([])
@@ -268,34 +270,13 @@ const filteredEraGroups = computed(() => {
   return result
 })
 
-const getImageUrl = (url) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return url
-}
-
 const safeDisplayItemName = (name) => displayItemName(name)
 
-const getEraClass = (eraName) => {
-  if (!eraName) return '80s'
-  if (eraName.includes('60')) return '60s'
-  if (eraName.includes('70')) return '70s'
-  if (eraName.includes('80')) return '80s'
-  if (eraName.includes('90')) return '90s'
-  if (eraName.includes('00')) return '00s'
-  return '80s'
-}
-
-const getEraIcon = (eraName) => {
-  const cls = getEraClass(eraName)
-  const icons = {
-    '60s': '★',
-    '70s': '✿',
-    '80s': '♪',
-    '90s': '⚡',
-    '00s': '◈'
-  }
-  return icons[cls] || '♪'
+const getItemImgUrl = (images) => {
+  if (!images || images.length === 0) return 'https://picsum.photos/400/300'
+  const main = getMainImage(images)
+  if (main) return main.url
+  return getImageUrl(images[0])
 }
 
 const getPreservationClass = (status) => {
@@ -320,7 +301,12 @@ const loadStats = async () => {
 const loadFilters = async () => {
   try {
     const res = await archivesAPI.getList({ page: 0, size: 1 })
-    eras.value = res.data.eras || []
+    let erasList = res.data.eras || []
+    erasList = erasList.map(era => ({
+      ...era,
+      name: normalizeEraName(era.name)
+    }))
+    eras.value = sortErasDefault(erasList)
     categories.value = res.data.categories || []
   } catch (e) {
     console.error('加载筛选条件失败', e)
@@ -332,7 +318,17 @@ const loadGroupedData = async () => {
     const res = await archivesAPI.getGrouped({
       categoryId: selectedCategory.value
     })
-    groupedData.value = res.data
+    let groups = res.data || []
+    groups = groups.map(group => ({
+      ...group,
+      eraName: normalizeEraName(group.eraName)
+    }))
+    groups = sortErasDefault(groups.map(g => ({ ...g, sortOrder: g.sortOrder, yearStart: g.yearStart, name: g.eraName })))
+      .map(sorted => {
+        const original = groups.find(g => g.eraId === sorted.eraId)
+        return original
+      })
+    groupedData.value = groups
   } catch (e) {
     console.error('加载分组档案失败', e)
   }

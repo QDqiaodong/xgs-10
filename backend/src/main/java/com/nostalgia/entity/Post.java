@@ -7,6 +7,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.nostalgia.util.PostImageListDeserializer;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -48,7 +51,8 @@ public class Post {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSON")
-    private List<String> images;
+    @JsonDeserialize(using = PostImageListDeserializer.class)
+    private List<PostImage> images;
 
     @Column(name = "category_id", nullable = false)
     private Long categoryId;

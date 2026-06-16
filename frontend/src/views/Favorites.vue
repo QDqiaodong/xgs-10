@@ -10,8 +10,8 @@
         :to="`/post/${post.id}`"
         class="post-card card"
       >
-        <div :class="['post-image', getCardImageClass(getImageOrientation(post.images && post.images[0] ? getImageUrl(post.images[0]) : ''))]">
-          <img :src="post.images && post.images[0] ? getImageUrl(post.images[0]) : 'https://picsum.photos/400/300'" :alt="post.title" />
+        <div :class="['post-image', getCardImageClass(getFavImgOrientation(post.images))]">
+          <img :src="getFavImgUrl(post.images)" :alt="post.title" />
         </div>
         <div class="post-content">
           <h3 class="post-title">{{ post.title }}</h3>
@@ -48,38 +48,61 @@ import { ref, onMounted, nextTick } from 'vue'
 import { favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
 import { displayItemName } from '../utils/textCleaner'
-import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation } from '../utils/imageLayout'
+import { 
+  detectImageOrientationFromUrl, 
+  detectImageOrientation,
+  getCardImageClass, 
+  ImageOrientation,
+  getImageUrl,
+  normalizeImageList,
+  getMainImage,
+  getImageOrientation
+} from '../utils/imageLayout'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
+import { getEraClass, normalizeEraName, sortErasDefault } from '../utils/eraUtils'
 
 const favorites = ref([])
 const userSession = getSessionId()
 const imageOrientations = ref({})
 
-const getImageUrl = (url) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return url
+const getFavImgUrl = (images) => {
+  if (!images || images.length === 0) return 'https://picsum.photos/400/300'
+  const main = getMainImage(images)
+  if (main) return main.url
+  return getImageUrl(images[0])
+}
+
+const getFavImgOrientation = (images) => {
+  if (!images || images.length === 0) return ImageOrientation.SQUARE
+  const firstImg = getMainImage(images) || (images[0] && typeof images[0] === 'object' ? images[0] : null)
+  if (firstImg && firstImg.width && firstImg.height) {
+    return detectImageOrientation(firstImg.width, firstImg.height)
+  }
+  const imgUrl = getFavImgUrl(images)
+  return imageOrientations.value[imgUrl] || ImageOrientation.SQUARE
 }
 
 const detectImagesOrientation = async (postsList) => {
   if (!postsList || postsList.length === 0) return
   for (const post of postsList) {
-    if (post.images && post.images.length > 0) {
-      const firstImg = getImageUrl(post.images[0])
-      if (firstImg && !imageOrientations.value[firstImg]) {
-        try {
-          const orientation = await detectImageOrientationFromUrl(firstImg)
-          imageOrientations.value[firstImg] = orientation
-        } catch (e) {
-          imageOrientations.value[firstImg] = ImageOrientation.SQUARE
+    const normalizedImages = normalizeImageList(post.images)
+    if (normalizedImages.length > 0) {
+      const firstImg = normalizedImages[0]
+      const imgUrl = firstImg.url
+      if (imgUrl && !imageOrientations.value[imgUrl]) {
+        if (firstImg.width && firstImg.height) {
+          imageOrientations.value[imgUrl] = detectImageOrientation(firstImg.width, firstImg.height)
+        } else {
+          try {
+            const orientation = await detectImageOrientationFromUrl(imgUrl)
+            imageOrientations.value[imgUrl] = orientation
+          } catch (e) {
+            imageOrientations.value[imgUrl] = ImageOrientation.SQUARE
+          }
         }
       }
     }
   }
-}
-
-const getImageOrientation = (imgUrl) => {
-  return imageOrientations.value[imgUrl] || ImageOrientation.SQUARE
 }
 
 const safeDisplayItemName = (name) => displayItemName(name)
@@ -87,7 +110,12 @@ const safeDisplayItemName = (name) => displayItemName(name)
 const loadFavorites = async () => {
   try {
     const res = await favoritesAPI.getUserFavorites(userSession)
-    favorites.value = res.data
+    let posts = res.data || []
+    posts = posts.map(post => ({
+      ...post,
+      eraName: post.eraName ? normalizeEraName(post.eraName) : post.eraName
+    }))
+    favorites.value = posts
     nextTick(() => detectImagesOrientation(favorites.value))
   } catch (e) {
     console.error('加载收藏失败', e)

@@ -60,7 +60,7 @@
                 @click.stop
               >
                 <img
-                  :src="post.images && post.images[0] ? getImageUrl(post.images[0]) : 'https://picsum.photos/120/120'"
+                  :src="getFirstImgUrl(post.images) || 'https://picsum.photos/120/120'"
                   :alt="post.title"
                 />
               </router-link>
@@ -120,9 +120,9 @@
           :to="`/post/${post.id}`"
           :class="['hot-card', 'card', `card-era-${getEraClass(post.eraName)}`]"
         >
-          <div :class="['hot-image', getCardImageClass(getImageOrientation(post.images && post.images[0] ? getImageUrl(post.images[0]) : ''))]">
+          <div :class="['hot-image', getCardImageClass(getFirstImgOrientation(post.images))]">
             <div :class="['image-overlay', `overlay-${getEraClass(post.eraName)}`]"></div>
-            <img :src="post.images && post.images[0] ? getImageUrl(post.images[0]) : 'https://picsum.photos/400/300'" :alt="post.title" />
+            <img :src="getFirstImgUrl(post.images) || 'https://picsum.photos/400/300'" :alt="post.title" />
             <div :class="['era-badge', `badge-${getEraClass(post.eraName)}`]">
               {{ post.eraName }}
             </div>
@@ -154,9 +154,9 @@
           :to="`/post/${post.id}`"
           :class="['post-card', 'card', `card-era-${getEraClass(post.eraName)}`]"
         >
-          <div :class="['post-image', getCardImageClass(getImageOrientation(post.images && post.images[0] ? getImageUrl(post.images[0]) : ''))]">
+          <div :class="['post-image', getCardImageClass(getFirstImgOrientation(post.images))]">
             <div :class="['image-overlay', `overlay-${getEraClass(post.eraName)}`]"></div>
-            <img :src="post.images && post.images[0] ? getImageUrl(post.images[0]) : 'https://picsum.photos/400/300'" :alt="post.title" />
+            <img :src="getFirstImgUrl(post.images) || 'https://picsum.photos/400/300'" :alt="post.title" />
             <div :class="['era-badge', `badge-${getEraClass(post.eraName)}`]">
               <span class="badge-icon">{{ getEraIcon(post.eraName) }}</span>
               {{ post.eraName }}
@@ -214,8 +214,18 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { categoriesAPI, erasAPI, postsAPI } from '../api'
 import { displayItemName } from '../utils/textCleaner'
-import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation } from '../utils/imageLayout'
+import { 
+  detectImageOrientationFromUrl, 
+  detectImageOrientation,
+  getCardImageClass, 
+  ImageOrientation, 
+  getImageUrl, 
+  getImageOrientation, 
+  normalizeImageList,
+  getMainImage
+} from '../utils/imageLayout'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
+import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
 
 const router = useRouter()
 
@@ -234,50 +244,50 @@ const imageOrientations = ref({})
 const detectPostImagesOrientation = async (postsList) => {
   if (!postsList || postsList.length === 0) return
   for (const post of postsList) {
-    if (post.images && post.images.length > 0) {
-      const firstImg = getImageUrl(post.images[0])
-      if (firstImg && !imageOrientations.value[firstImg]) {
-        try {
-          const orientation = await detectImageOrientationFromUrl(firstImg)
-          imageOrientations.value[firstImg] = orientation
-        } catch (e) {
-          imageOrientations.value[firstImg] = ImageOrientation.SQUARE
+    const normalizedImages = normalizeImageList(post.images)
+    if (normalizedImages.length > 0) {
+      const firstImg = normalizedImages[0]
+      const imgUrl = firstImg.url
+      if (imgUrl && !imageOrientations.value[imgUrl]) {
+        if (firstImg.width && firstImg.height) {
+          imageOrientations.value[imgUrl] = detectImageOrientation(firstImg.width, firstImg.height)
+        } else {
+          try {
+            const orientation = await detectImageOrientationFromUrl(imgUrl)
+            imageOrientations.value[imgUrl] = orientation
+          } catch (e) {
+            imageOrientations.value[imgUrl] = ImageOrientation.SQUARE
+          }
         }
       }
     }
   }
 }
 
-const getImageOrientation = (imgUrl) => {
+const getImageOrientationByUrl = (imgUrl) => {
   return imageOrientations.value[imgUrl] || ImageOrientation.SQUARE
 }
 
-const getEraClass = (eraName) => {
-  if (!eraName) return '80s'
-  if (eraName.includes('60')) return '60s'
-  if (eraName.includes('70')) return '70s'
-  if (eraName.includes('80')) return '80s'
-  if (eraName.includes('90')) return '90s'
-  if (eraName.includes('00')) return '00s'
-  return '80s'
+const getFirstImage = (images) => {
+  const main = getMainImage(images)
+  return main || null
 }
 
-const getEraIcon = (eraName) => {
-  const cls = getEraClass(eraName)
-  const icons = {
-    '60s': '★',
-    '70s': '✿',
-    '80s': '♪',
-    '90s': '⚡',
-    '00s': '◈'
+const getFirstImgOrientation = (images) => {
+  if (!images || images.length === 0) return ImageOrientation.SQUARE
+  const firstImg = getMainImage(images) || (images[0] && typeof images[0] === 'object' ? images[0] : null)
+  if (firstImg && firstImg.width && firstImg.height) {
+    return detectImageOrientation(firstImg.width, firstImg.height)
   }
-  return icons[cls] || '♪'
+  const imgUrl = getImageUrl(images && images[0] ? images[0] : '')
+  return getImageOrientationByUrl(imgUrl)
 }
 
-const getImageUrl = (url) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return url
+const getFirstImgUrl = (images) => {
+  if (!images || images.length === 0) return ''
+  const main = getMainImage(images)
+  if (main) return main.url
+  return getImageUrl(images[0])
 }
 
 const loadCategories = async () => {
@@ -292,7 +302,12 @@ const loadCategories = async () => {
 const loadEras = async () => {
   try {
     const res = await erasAPI.getAll()
-    eras.value = res.data
+    let erasList = res.data || []
+    erasList = erasList.map(era => ({
+      ...era,
+      name: normalizeEraName(era.name)
+    }))
+    eras.value = sortErasDefault(erasList)
   } catch (e) {
     console.error('加载年代失败', e)
   }
@@ -301,7 +316,12 @@ const loadEras = async () => {
 const loadEraTimeline = async () => {
   try {
     const res = await erasAPI.getTimeline()
-    eraTimeline.value = res.data
+    let timelineList = res.data || []
+    timelineList = timelineList.map(era => ({
+      ...era,
+      name: normalizeEraName(era.name)
+    }))
+    eraTimeline.value = sortErasDefault(timelineList)
   } catch (e) {
     console.error('加载年代时间廊失败', e)
   }

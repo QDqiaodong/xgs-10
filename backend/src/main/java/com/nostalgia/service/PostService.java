@@ -3,11 +3,13 @@ package com.nostalgia.service;
 import com.nostalgia.entity.Category;
 import com.nostalgia.entity.Era;
 import com.nostalgia.entity.Post;
+import com.nostalgia.entity.PostImage;
 import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.repository.CategoryRepository;
 import com.nostalgia.repository.EraRepository;
 import com.nostalgia.repository.PostRepository;
 import com.nostalgia.repository.TimelineEventRepository;
+import com.nostalgia.util.ImageInfo;
 import com.nostalgia.util.TextCleaner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -25,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +55,7 @@ public class PostService {
         }
 
         posts.forEach(this::populateCategoryAndEraNames);
+        posts.forEach(this::normalizeImages);
         return posts;
     }
 
@@ -59,6 +63,7 @@ public class PostService {
     public List<Post> getHotPosts() {
         List<Post> posts = postRepository.findTop10ByOrderByViewCountDesc();
         posts.forEach(this::populateCategoryAndEraNames);
+        posts.forEach(this::normalizeImages);
         return posts;
     }
 
@@ -68,6 +73,7 @@ public class PostService {
         postRepository.incrementViewCount(id);
         populateCategoryAndEraNames(post);
         populateTimelineEvents(post);
+        normalizeImages(post);
         return post;
     }
 
@@ -81,19 +87,32 @@ public class PostService {
     @Transactional
     public Post createPost(Post post, List<MultipartFile> images, List<TimelineEvent> timelineEvents) throws IOException {
         if (images != null && !images.isEmpty()) {
-            List<String> imageUrls = new ArrayList<>();
+            List<PostImage> postImages = new ArrayList<>();
             Path uploadDir = Paths.get(uploadPath);
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
             }
 
-            for (MultipartFile image : images) {
+            for (int i = 0; i < images.size(); i++) {
+                MultipartFile image = images.get(i);
                 String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
                 Path filePath = uploadDir.resolve(fileName);
                 Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                imageUrls.add("/api/uploads/" + fileName);
+
+                PostImage postImage = new PostImage();
+                postImage.setUrl("/api/uploads/" + fileName);
+                postImage.setSortOrder(i);
+                postImage.setIsMain(i == 0);
+
+                ImageInfo imageInfo = ImageInfo.getImageInfo(image);
+                if (imageInfo != null) {
+                    postImage.setWidth(imageInfo.getWidth());
+                    postImage.setHeight(imageInfo.getHeight());
+                }
+
+                postImages.add(postImage);
             }
-            post.setImages(imageUrls);
+            post.setImages(postImages);
         }
 
         Post savedPost = postRepository.save(post);
@@ -109,6 +128,7 @@ public class PostService {
 
         populateStorySummary(savedPost);
         populateCategoryAndEraNames(savedPost);
+        normalizeImages(savedPost);
         return savedPost;
     }
 
@@ -158,5 +178,34 @@ public class PostService {
     private void populateTimelineEvents(Post post) {
         List<TimelineEvent> events = timelineEventRepository.findByPostIdOrderByEventDateAscSortOrderAsc(post.getId());
         post.setTimelineEvents(events);
+    }
+
+    private void normalizeImages(Post post) {
+        if (post.getImages() == null || post.getImages().isEmpty()) {
+            return;
+        }
+
+        List<PostImage> images = post.getImages();
+
+        for (int i = 0; i < images.size(); i++) {
+            PostImage img = images.get(i);
+            if (img.getSortOrder() == null) {
+                img.setSortOrder(i);
+            }
+            if (img.getIsMain() == null) {
+                img.setIsMain(i == 0);
+            }
+        }
+
+        List<PostImage> sortedImages = images.stream()
+            .sorted(Comparator.comparingInt(img -> img.getSortOrder() != null ? img.getSortOrder() : 0))
+            .collect(Collectors.toList());
+
+        boolean hasMain = sortedImages.stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
+        if (!hasMain && !sortedImages.isEmpty()) {
+            sortedImages.get(0).setIsMain(true);
+        }
+
+        post.setImages(sortedImages);
     }
 }

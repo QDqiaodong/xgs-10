@@ -180,8 +180,20 @@ import { useRoute } from 'vue-router'
 import { postsAPI, commentsAPI, favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
 import { displayItemName } from '../utils/textCleaner'
-import { detectImageOrientationFromUrl, getCardImageClass, ImageOrientation, getLayoutForGrid } from '../utils/imageLayout'
+import { 
+  detectImageOrientationFromUrl, 
+  detectImageOrientation,
+  getCardImageClass, 
+  ImageOrientation, 
+  getLayoutForGrid,
+  getImageUrl,
+  normalizeImageList,
+  getImageOrientation,
+  getImageWidth,
+  getImageHeight
+} from '../utils/imageLayout'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
+import { getEraClass, normalizeEraName } from '../utils/eraUtils'
 
 const route = useRoute()
 const postId = computed(() => route.params.id)
@@ -197,26 +209,33 @@ const imageLayouts = ref([])
 
 const detectDetailImagesOrientation = async (images) => {
   if (!images || images.length === 0) return
-  imageLayouts.value = getLayoutForGrid(images.length)
-  for (let i = 0; i < images.length; i++) {
-    const imgUrl = getImageUrl(images[i])
+  const normalizedImages = normalizeImageList(images)
+  imageLayouts.value = getLayoutForGrid(normalizedImages.length)
+  for (let i = 0; i < normalizedImages.length; i++) {
+    const img = normalizedImages[i]
+    const imgUrl = img.url
     if (imgUrl && !imageOrientations.value[imgUrl]) {
-      const layout = imageLayouts.value[i]
-      if (layout && layout.orientation) {
-        imageOrientations.value[imgUrl] = layout.orientation
+      if (img.width && img.height) {
+        imageOrientations.value[imgUrl] = detectImageOrientation(img.width, img.height)
       } else {
-        try {
-          const orientation = await detectImageOrientationFromUrl(imgUrl)
-          imageOrientations.value[imgUrl] = orientation
-        } catch (e) {
-          imageOrientations.value[imgUrl] = ImageOrientation.SQUARE
+        const layout = imageLayouts.value[i]
+        if (layout && layout.orientation) {
+          imageOrientations.value[imgUrl] = layout.orientation
+        } else {
+          try {
+            const orientation = await detectImageOrientationFromUrl(imgUrl)
+            imageOrientations.value[imgUrl] = orientation
+          } catch (e) {
+            imageOrientations.value[imgUrl] = ImageOrientation.SQUARE
+          }
         }
       }
     }
   }
 }
 
-const getImgOrientation = (imgUrl) => {
+const getImgOrientation = (img) => {
+  const imgUrl = getImageUrl(img)
   return imageOrientations.value[imgUrl] || ImageOrientation.SQUARE
 }
 
@@ -227,12 +246,6 @@ const getImageLayoutClass = (idx) => {
     return `layout-${imageLayouts.value[idx].span}`
   }
   return 'layout-full'
-}
-
-const getImageUrl = (url) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return url
 }
 
 const formatDate = (dateStr) => {
@@ -302,7 +315,11 @@ const getPreservationIcon = (status) => {
 const loadPost = async () => {
   try {
     const res = await postsAPI.getDetail(postId.value)
-    post.value = res.data
+    let postData = res.data
+    if (postData && postData.eraName) {
+      postData.eraName = normalizeEraName(postData.eraName)
+    }
+    post.value = postData
     nextTick(() => {
       if (post.value && post.value.images) {
         detectDetailImagesOrientation(post.value.images)
