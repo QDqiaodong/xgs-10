@@ -142,7 +142,7 @@
           <CategoryIcon :category="cat.name" size="sm" mode="emoji" />
           {{ cat.name }}
         </button>
-        <button v-if="selectedCategory" class="filter-btn clear" @click="selectedCategory = null">
+        <button v-if="selectedCategory" class="filter-btn clear" @click="clearCategoryFilter">
           清除筛选
         </button>
       </div>
@@ -157,7 +157,7 @@
           <span class="era-dot"></span>
           {{ era.name }}
         </button>
-        <button v-if="selectedEra" class="filter-btn clear" @click="selectedEra = null">
+        <button v-if="selectedEra" class="filter-btn clear" @click="clearEraFilter">
           清除筛选
         </button>
       </div>
@@ -482,6 +482,18 @@ const toggleCategory = (id) => {
 
 const toggleEra = (id) => {
   selectedEra.value = selectedEra.value === id ? null : id
+  currentPage.value = 0
+  loadPosts()
+}
+
+const clearCategoryFilter = () => {
+  selectedCategory.value = null
+  currentPage.value = 0
+  loadPosts()
+}
+
+const clearEraFilter = () => {
+  selectedEra.value = null
   currentPage.value = 0
   loadPosts()
 }

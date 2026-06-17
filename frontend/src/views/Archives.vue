@@ -73,6 +73,24 @@
       </div>
     </section>
 
+    <div class="content-header">
+      <h2 class="section-title">{{ viewMode === 'grouped' ? '📚 分组档案' : '📋 档案列表' }}</h2>
+      <div class="view-toggle">
+        <button
+          :class="['toggle-btn', { active: viewMode === 'grouped' }]"
+          @click="viewMode = 'grouped'"
+        >
+          📚 分组视图
+        </button>
+        <button
+          :class="['toggle-btn', { active: viewMode === 'list' }]"
+          @click="viewMode = 'list'"
+        >
+          📋 列表视图
+        </button>
+      </div>
+    </div>
+
     <section class="archive-content" v-if="viewMode === 'grouped'">
       <div
         v-for="eraGroup in filteredEraGroups"
@@ -154,27 +172,13 @@
           <p>这个年代暂无藏品</p>
         </div>
       </div>
+      <div class="empty-state" v-if="filteredEraGroups.length === 0">
+        <div class="empty-icon">📭</div>
+        <p>暂无符合条件的档案</p>
+      </div>
     </section>
 
     <section class="archive-list-section" v-else>
-      <div class="list-header">
-        <h2 class="section-title">📋 档案列表</h2>
-        <div class="view-toggle">
-          <button
-            :class="['toggle-btn', { active: viewMode === 'grouped' }]"
-            @click="viewMode = 'grouped'"
-          >
-            📚 分组视图
-          </button>
-          <button
-            :class="['toggle-btn', { active: viewMode === 'list' }]"
-            @click="viewMode = 'list'"
-          >
-            📋 列表视图
-          </button>
-        </div>
-      </div>
-
       <div class="archive-items-grid" v-if="posts.length > 0">
         <router-link
           v-for="item in posts"
@@ -835,7 +839,7 @@ onMounted(() => {
 .tag-era-90s { background: #ffab40; color: #bf360c; border: 1px solid #ff6f00; font-weight: 600; }
 .tag-era-00s { background: #80deea; color: #006064; border: 1px solid #00acc1; font-weight: 500; }
 
-.list-header {
+.content-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
