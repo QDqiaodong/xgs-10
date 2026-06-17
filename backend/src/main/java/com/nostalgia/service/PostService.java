@@ -67,10 +67,12 @@ public class PostService {
         return posts;
     }
 
+    @CacheEvict(value = {"hotPosts"}, allEntries = true)
     @Transactional
     public Post getPostById(Long id) {
         Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("帖子不存在"));
         postRepository.incrementViewCount(id);
+        post.setViewCount((post.getViewCount() == null ? 0 : post.getViewCount()) + 1);
         populateCategoryAndEraNames(post);
         populateTimelineEvents(post);
         normalizeImages(post);
