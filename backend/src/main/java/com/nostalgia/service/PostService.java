@@ -10,6 +10,7 @@ import com.nostalgia.repository.EraRepository;
 import com.nostalgia.repository.PostRepository;
 import com.nostalgia.repository.TimelineEventRepository;
 import com.nostalgia.util.ImageInfo;
+import com.nostalgia.util.StorySummaryExtractor;
 import com.nostalgia.util.TextCleaner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -138,6 +139,48 @@ public class PostService {
         populateCategoryAndEraNames(post);
     }
 
+    @CacheEvict(value = {"hotPosts"}, allEntries = true)
+    @Transactional
+    public int regenerateAllSummaries() {
+        List<Post> allPosts = postRepository.findAll();
+        int updated = 0;
+        for (Post post : allPosts) {
+            StorySummaryExtractor.ExtractionResult result = StorySummaryExtractor.extract(
+                    post.getContent(),
+                    post.getStory(),
+                    post.getMemory(),
+                    post.getEraBackground(),
+                    post.getCurrentStatus(),
+                    post.getUsageScene()
+            );
+
+            boolean changed = false;
+
+            if (result.getItemSource() != null && !result.getItemSource().isBlank()) {
+                post.setItemSource(result.getItemSource());
+                changed = true;
+            }
+            if (result.getUsageScene() != null && !result.getUsageScene().isBlank()) {
+                post.setUsageScene(result.getUsageScene());
+                changed = true;
+            }
+            if (result.getEmotionKeywords() != null && !result.getEmotionKeywords().isEmpty()) {
+                post.setEmotionKeywords(result.getEmotionKeywords());
+                changed = true;
+            }
+            if (result.getSummaryText() != null && !result.getSummaryText().isBlank()) {
+                post.setStorySummary(result.getSummaryText());
+                changed = true;
+            }
+
+            if (changed) {
+                postRepository.save(post);
+                updated++;
+            }
+        }
+        return updated;
+    }
+
     private void populateCategoryAndEraNames(Post post) {
         if (post.getItemName() != null) {
             post.setItemName(TextCleaner.safeItemName(post.getItemName()));
@@ -162,18 +205,40 @@ public class PostService {
     }
 
     private void populateStorySummary(Post post) {
+        boolean needsExtraction = post.getItemSource() == null
+                || post.getItemSource().isBlank()
+                || post.getEmotionKeywords() == null
+                || post.getEmotionKeywords().isEmpty()
+                || post.getStorySummary() == null
+                || post.getStorySummary().isBlank();
+
+        if (!needsExtraction) {
+            return;
+        }
+
+        StorySummaryExtractor.ExtractionResult result = StorySummaryExtractor.extract(
+                post.getContent(),
+                post.getStory(),
+                post.getMemory(),
+                post.getEraBackground(),
+                post.getCurrentStatus(),
+                post.getUsageScene()
+        );
+
+        if (post.getItemSource() == null || post.getItemSource().isBlank()) {
+            post.setItemSource(result.getItemSource());
+        }
+
+        if (post.getUsageScene() == null || post.getUsageScene().isBlank()) {
+            post.setUsageScene(result.getUsageScene());
+        }
+
+        if (post.getEmotionKeywords() == null || post.getEmotionKeywords().isEmpty()) {
+            post.setEmotionKeywords(result.getEmotionKeywords());
+        }
+
         if (post.getStorySummary() == null || post.getStorySummary().isBlank()) {
-            String content = post.getContent() != null ? post.getContent() : "";
-            String story = post.getStory() != null ? post.getStory() : "";
-            String memory = post.getMemory() != null ? post.getMemory() : "";
-            String eraBackground = post.getEraBackground() != null ? post.getEraBackground() : "";
-            String currentStatus = post.getCurrentStatus() != null ? post.getCurrentStatus() : "";
-            String combined = (content + " " + story + " " + memory + " " + eraBackground + " " + currentStatus).trim();
-            if (combined.length() > 200) {
-                post.setStorySummary(combined.substring(0, 200) + "...");
-            } else {
-                post.setStorySummary(combined);
-            }
+            post.setStorySummary(result.getSummaryText());
         }
     }
 

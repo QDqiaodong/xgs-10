@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/posts")
@@ -92,5 +93,14 @@ public class PostController {
         }
 
         return ResponseEntity.ok(postService.createPost(post, images, events));
+    }
+
+    @PostMapping("/regenerate-summaries")
+    public ResponseEntity<Map<String, Object>> regenerateSummaries() {
+        int updated = postService.regenerateAllSummaries();
+        return ResponseEntity.ok(Map.of(
+                "updated", updated,
+                "message", "已重新生成 " + updated + " 篇故事摘要"
+        ));
     }
 }

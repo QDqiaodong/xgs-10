@@ -124,7 +124,18 @@
                 <div class="item-content">
                   <h4 class="item-name">{{ safeDisplayItemName(item.itemName) }}</h4>
                   <p class="item-title">{{ item.title }}</p>
-                  <p class="item-summary">{{ item.storySummary || '暂无故事摘要' }}</p>
+                  <div class="item-summary-structured" v-if="item.itemSource || item.usageScene || (item.emotionKeywords && item.emotionKeywords.length > 0)">
+                    <span class="summary-chip summary-source" v-if="item.itemSource">
+                      <span class="chip-icon">📦</span>{{ item.itemSource }}
+                    </span>
+                    <span class="summary-chip summary-scene" v-if="item.usageScene">
+                      <span class="chip-icon">📍</span>{{ item.usageScene }}
+                    </span>
+                    <span class="summary-chip summary-emotion" v-for="kw in (item.emotionKeywords || []).slice(0, 3)" :key="kw">
+                      <span class="chip-icon">💭</span>{{ kw }}
+                    </span>
+                  </div>
+                  <p class="item-summary" v-else>{{ item.storySummary || '暂无故事摘要' }}</p>
                   <div class="item-footer">
                     <span class="item-tags">
                       <span :class="['tag', 'tag-cat', getCategoryClass(item.categoryName)]" :style="getCategoryStyleVars(item.categoryName)">
@@ -750,6 +761,50 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
+}
+
+.item-summary-structured {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-chip .chip-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.summary-source {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  color: #e65100;
+  border: 1px solid rgba(255, 111, 0, 0.2);
+}
+
+.summary-scene {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #0d47a1;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+.summary-emotion {
+  background: linear-gradient(135deg, #fce4ec, #f8bbd0);
+  color: #ad1457;
+  border: 1px solid rgba(173, 20, 87, 0.15);
 }
 
 .item-footer {

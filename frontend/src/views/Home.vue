@@ -184,6 +184,14 @@
           </div>
           <div :class="['hot-content', `content-${getEraClass(post.eraName)}`]">
             <h3 :class="['hot-title', `title-${getEraClass(post.eraName)}`]">{{ post.title }}</h3>
+            <div class="hot-summary-structured" v-if="post.itemSource || (post.emotionKeywords && post.emotionKeywords.length > 0)">
+              <span class="summary-chip summary-source" v-if="post.itemSource">
+                <span class="chip-icon">📦</span>{{ post.itemSource }}
+              </span>
+              <span class="summary-chip summary-emotion" v-for="kw in (post.emotionKeywords || []).slice(0, 2)" :key="kw">
+                <span class="chip-icon">💭</span>{{ kw }}
+              </span>
+            </div>
             <div class="hot-meta">
               <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
                 <CategoryIcon :category="post.categoryName" size="xs" />
@@ -220,7 +228,18 @@
           <div :class="['post-content', `content-${getEraClass(post.eraName)}`]">
             <h3 :class="['post-title', `title-${getEraClass(post.eraName)}`]">{{ post.title }}</h3>
             <p :class="['post-item', `item-${getEraClass(post.eraName)}`]">物件：{{ safeDisplayItemName(post.itemName) }}</p>
-            <p class="post-excerpt">{{ post.content }}</p>
+            <div class="post-summary-structured" v-if="post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
+              <span class="summary-chip summary-source" v-if="post.itemSource">
+                <span class="chip-icon">📦</span>{{ post.itemSource }}
+              </span>
+              <span class="summary-chip summary-scene" v-if="post.usageScene">
+                <span class="chip-icon">📍</span>{{ post.usageScene }}
+              </span>
+              <span class="summary-chip summary-emotion" v-for="kw in (post.emotionKeywords || []).slice(0, 3)" :key="kw">
+                <span class="chip-icon">💭</span>{{ kw }}
+              </span>
+            </div>
+            <p class="post-excerpt" v-else>{{ post.storySummary || post.content }}</p>
             <div class="post-tags">
               <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
                 <CategoryIcon :category="post.categoryName" size="xs" />
@@ -1317,6 +1336,51 @@ onMounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.post-summary-structured,
+.hot-summary-structured {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-chip .chip-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.summary-source {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  color: #e65100;
+  border: 1px solid rgba(255, 111, 0, 0.2);
+}
+
+.summary-scene {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #0d47a1;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+.summary-emotion {
+  background: linear-gradient(135deg, #fce4ec, #f8bbd0);
+  color: #ad1457;
+  border: 1px solid rgba(173, 20, 87, 0.15);
 }
 
 .hot-meta {

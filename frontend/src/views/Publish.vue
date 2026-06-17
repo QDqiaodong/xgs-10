@@ -121,11 +121,11 @@
             <label>故事摘要</label>
             <textarea
               v-model="form.storySummary"
-              placeholder="用一两句话概括这个物件的故事（建议50-200字，档案页将展示此内容）"
+              placeholder="用一两句话概括这个物件的故事（留空将自动从内容中提取物件来源、使用场景和情绪关键词）"
               rows="2"
               maxlength="500"
             ></textarea>
-            <p class="form-hint">{{ form.storySummary.length }}/500 字，留空将自动从内容中生成</p>
+            <p class="form-hint">留空将自动从物件来历和使用记忆中提取结构化摘要</p>
           </div>
 
           <div class="form-group">

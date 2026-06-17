@@ -42,12 +42,28 @@
 
         <div class="split-right">
           <div class="story-content story-content-top mobile-first">
-            <div class="content-section" v-if="post.storySummary">
+            <div class="content-section" v-if="post.storySummary || post.itemSource || (post.emotionKeywords && post.emotionKeywords.length > 0)">
               <div class="section-header">
                 <span class="section-icon">📋</span>
                 <h3 class="section-title">故事摘要</h3>
               </div>
-              <p class="summary-text">{{ post.storySummary }}</p>
+              <div class="summary-structured" v-if="post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
+                <div class="summary-row" v-if="post.itemSource">
+                  <span class="summary-label">📦 来源</span>
+                  <span class="summary-value summary-source-value">{{ post.itemSource }}</span>
+                </div>
+                <div class="summary-row" v-if="post.usageScene">
+                  <span class="summary-label">📍 场景</span>
+                  <span class="summary-value summary-scene-value">{{ post.usageScene }}</span>
+                </div>
+                <div class="summary-row" v-if="post.emotionKeywords && post.emotionKeywords.length > 0">
+                  <span class="summary-label">💭 情感</span>
+                  <div class="summary-emotion-tags">
+                    <span class="emotion-tag" v-for="kw in post.emotionKeywords" :key="kw">{{ kw }}</span>
+                  </div>
+                </div>
+              </div>
+              <p class="summary-text" v-if="post.storySummary && (!post.itemSource && !post.usageScene && !(post.emotionKeywords && post.emotionKeywords.length > 0))">{{ post.storySummary }}</p>
             </div>
           </div>
 
@@ -108,6 +124,14 @@
                 </span>
               </div>
 
+              <div class="nameplate-row" v-if="post.itemSource">
+                <span class="nameplate-label">
+                  <span class="label-icon">📦</span>
+                  物件来源
+                </span>
+                <span class="nameplate-value">{{ post.itemSource }}</span>
+              </div>
+
               <div class="nameplate-row" v-if="post.usageScene">
                 <span class="nameplate-label">
                   <span class="label-icon">📍</span>
@@ -128,6 +152,17 @@
                   </span>
                 </span>
               </div>
+              <div class="nameplate-row" v-if="post.emotionKeywords && post.emotionKeywords.length > 0">
+                <span class="nameplate-label">
+                  <span class="label-icon">💭</span>
+                  情感关键词
+                </span>
+                <span class="nameplate-value">
+                  <span class="nameplate-emotion-tags">
+                    <span class="emotion-tag" v-for="kw in post.emotionKeywords" :key="kw">{{ kw }}</span>
+                  </span>
+                </span>
+              </div>
             </div>
 
             <div class="nameplate-footer">
@@ -139,12 +174,28 @@
           </div>
 
           <div class="story-content">
-            <div class="content-section story-summary-desktop" v-if="post.storySummary">
+            <div class="content-section story-summary-desktop" v-if="post.storySummary || post.itemSource || (post.emotionKeywords && post.emotionKeywords.length > 0)">
               <div class="section-header">
                 <span class="section-icon">📋</span>
                 <h3 class="section-title">故事摘要</h3>
               </div>
-              <p class="summary-text">{{ post.storySummary }}</p>
+              <div class="summary-structured" v-if="post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
+                <div class="summary-row" v-if="post.itemSource">
+                  <span class="summary-label">📦 来源</span>
+                  <span class="summary-value summary-source-value">{{ post.itemSource }}</span>
+                </div>
+                <div class="summary-row" v-if="post.usageScene">
+                  <span class="summary-label">📍 场景</span>
+                  <span class="summary-value summary-scene-value">{{ post.usageScene }}</span>
+                </div>
+                <div class="summary-row" v-if="post.emotionKeywords && post.emotionKeywords.length > 0">
+                  <span class="summary-label">💭 情感</span>
+                  <div class="summary-emotion-tags">
+                    <span class="emotion-tag" v-for="kw in post.emotionKeywords" :key="kw">{{ kw }}</span>
+                  </div>
+                </div>
+              </div>
+              <p class="summary-text" v-if="post.storySummary && (!post.itemSource && !post.usageScene && !(post.emotionKeywords && post.emotionKeywords.length > 0))">{{ post.storySummary }}</p>
             </div>
 
             <div class="story-layers">
@@ -764,6 +815,12 @@ const submitComment = async () => {
   letter-spacing: 1px;
 }
 
+.nameplate-emotion-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .era-badge {
   display: inline-block;
   padding: 4px 14px;
@@ -977,6 +1034,69 @@ const submitComment = async () => {
   border-radius: 0 10px 10px 0;
   font-style: italic;
   margin: 0;
+}
+
+.summary-structured {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fffbe6 0%, #fff7e6 100%);
+  border-left: 4px solid #faad14;
+  border-radius: 0 10px 10px 0;
+}
+
+.summary-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.summary-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8b6914;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 70px;
+}
+
+.summary-value {
+  font-size: 14px;
+  color: #5d4e37;
+  line-height: 1.6;
+}
+
+.summary-source-value {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  color: #e65100;
+  padding: 4px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 111, 0, 0.2);
+}
+
+.summary-scene-value {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #0d47a1;
+  padding: 4px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+.summary-emotion-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.emotion-tag {
+  padding: 4px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  background: linear-gradient(135deg, #fce4ec, #f8bbd0);
+  color: #ad1457;
+  border: 1px solid rgba(173, 20, 87, 0.15);
+  font-weight: 500;
 }
 
 .story-layers {

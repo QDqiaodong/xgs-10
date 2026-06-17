@@ -52,6 +52,13 @@ public class Post {
     @Column(name = "story_summary", length = 500)
     private String storySummary;
 
+    @Column(name = "item_source", length = 200)
+    private String itemSource;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "emotion_keywords", columnDefinition = "JSON")
+    private List<String> emotionKeywords;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSON")
     @JsonDeserialize(using = PostImageListDeserializer.class)
