@@ -54,6 +54,7 @@ public class PostController {
             @RequestParam(required = false) String eraBackground,
             @RequestParam(required = false) String currentStatus,
             @RequestParam(required = false) String preservationStatus,
+            @RequestParam(required = false) String usageScene,
             @RequestParam(required = false) String storySummary,
             @RequestParam Long categoryId,
             @RequestParam Long eraId,
@@ -77,6 +78,7 @@ public class PostController {
         post.setEraBackground(eraBackground != null && !eraBackground.isBlank() ? eraBackground.trim() : null);
         post.setCurrentStatus(currentStatus != null && !currentStatus.isBlank() ? currentStatus.trim() : null);
         post.setPreservationStatus(preservationStatus != null && !preservationStatus.isBlank() ? preservationStatus.trim() : null);
+        post.setUsageScene(usageScene != null && !usageScene.isBlank() ? usageScene.trim() : null);
         post.setStorySummary(storySummary != null && !storySummary.isBlank() ? storySummary.trim() : null);
         post.setCategoryId(categoryId);
         post.setEraId(eraId);

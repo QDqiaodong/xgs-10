@@ -6,115 +6,194 @@
       <header class="post-header">
         <h1 class="post-title">{{ post.title }}</h1>
         <div class="post-meta">
-          <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
-            <CategoryIcon :category="post.categoryName" size="xs" />
-            {{ post.categoryName }}
-          </span>
-          <span class="tag">{{ post.eraName }}</span>
           <span class="author">作者：{{ post.authorName }}</span>
           <span class="date">{{ formatDate(post.createdAt) }}</span>
         </div>
       </header>
 
-      <div class="post-images post-images-grid" v-if="post.images && post.images.length > 0">
-        <div
-          v-for="(img, idx) in post.images"
-          :key="idx"
-          :class="[
-            'post-image-item',
-            getImageLayoutClass(idx),
-            getCardImageClass(getImgOrientation(getImageUrl(img)))
-          ]"
-        >
-          <img :src="getImageUrl(img)" :alt="`${post.title} ${idx + 1}`" />
-        </div>
-      </div>
-
-      <div class="post-body">
-        <div class="archive-info-grid">
-          <div class="info-row">
-            <span class="info-label">物件名称：</span>
-            <span class="info-value">{{ safeDisplayItemName(post.itemName) }}</span>
-          </div>
-          <div class="info-row" v-if="post.preservationStatus">
-            <span class="info-label">保存状态：</span>
-            <span :class="['info-value', 'status-value', getPreservationClass(post.preservationStatus)]">
-              <span class="status-icon">{{ getPreservationIcon(post.preservationStatus) }}</span>
-              {{ post.preservationStatus }}
-            </span>
-          </div>
-        </div>
-
-        <div class="content-section" v-if="post.storySummary">
-          <h3 class="section-title">📋 故事摘要</h3>
-          <p class="summary-text">{{ post.storySummary }}</p>
-        </div>
-
-        <div class="story-layers">
-          <div class="story-layer" v-if="post.story">
-            <div class="story-layer-header">
-              <span class="story-layer-icon">🎁</span>
-              <h3 class="story-layer-title">物件来历</h3>
+      <div class="split-layout">
+        <div class="split-left">
+          <div class="main-image-area">
+            <div class="main-image-wrapper" v-if="post.images && post.images.length > 0">
+              <img
+                :src="getImageUrl(mainImage)"
+                :alt="post.title"
+                class="main-image"
+              />
+              <div class="image-frame-decoration"></div>
             </div>
-            <p class="story-layer-content">{{ post.story }}</p>
-          </div>
-
-          <div class="story-layer" v-if="post.memory">
-            <div class="story-layer-header">
-              <span class="story-layer-icon">💭</span>
-              <h3 class="story-layer-title">使用记忆</h3>
+            <div class="main-image-placeholder" v-else>
+              <span class="placeholder-icon">📷</span>
+              <span class="placeholder-text">暂无图片</span>
             </div>
-            <p class="story-layer-content">{{ post.memory }}</p>
-          </div>
 
-          <div class="story-layer" v-if="post.eraBackground">
-            <div class="story-layer-header">
-              <span class="story-layer-icon">🏛️</span>
-              <h3 class="story-layer-title">时代背景</h3>
-            </div>
-            <p class="story-layer-content">{{ post.eraBackground }}</p>
-          </div>
-
-          <div class="story-layer" v-if="post.currentStatus">
-            <div class="story-layer-header">
-              <span class="story-layer-icon">📍</span>
-              <h3 class="story-layer-title">现状</h3>
-            </div>
-            <p class="story-layer-content">{{ post.currentStatus }}</p>
-          </div>
-
-          <div class="story-layer" v-if="post.content && !post.story && !post.memory && !post.eraBackground && !post.currentStatus">
-            <div class="story-layer-header">
-              <span class="story-layer-icon">📝</span>
-              <h3 class="story-layer-title">物件介绍</h3>
-            </div>
-            <p class="story-layer-content">{{ post.content }}</p>
-          </div>
-        </div>
-
-        <div class="content-section" v-if="post.timelineEvents && post.timelineEvents.length > 0">
-          <h3 class="section-title">📅 故事年表</h3>
-          <div class="timeline">
-            <div
-              v-for="(event, idx) in post.timelineEvents"
-              :key="event.id"
-              class="timeline-item"
-            >
-              <div class="timeline-line" v-if="idx < post.timelineEvents.length - 1"></div>
-              <div :class="['timeline-dot', `event-${event.eventType.toLowerCase()}`]">
-                <span class="dot-icon">{{ getEventTypeIcon(event.eventType) }}</span>
+            <div class="thumbnail-list" v-if="post.images && post.images.length > 1">
+              <div
+                v-for="(img, idx) in post.images"
+                :key="idx"
+                :class="['thumbnail-item', { active: idx === activeImageIndex }]"
+                @click="activeImageIndex = idx"
+              >
+                <img :src="getImageUrl(img)" :alt="`${post.title} ${idx + 1}`" />
               </div>
-              <div class="timeline-content">
-                <div class="timeline-header">
-                  <span :class="['event-tag', `tag-${event.eventType.toLowerCase()}`]">
-                    {{ getEventTypeLabel(event.eventType) }}
+            </div>
+          </div>
+        </div>
+
+        <div class="split-right">
+          <div class="nameplate-card">
+            <div class="nameplate-header">
+              <div class="nameplate-icon">📜</div>
+              <h2 class="nameplate-title">物件铭牌</h2>
+              <div class="nameplate-decoration-line"></div>
+            </div>
+
+            <div class="nameplate-body">
+              <div class="nameplate-row">
+                <span class="nameplate-label">
+                  <span class="label-icon">🏷️</span>
+                  物件名称
+                </span>
+                <span class="nameplate-value nameplate-item-name">
+                  {{ safeDisplayItemName(post.itemName) }}
+                </span>
+              </div>
+
+              <div class="nameplate-row">
+                <span class="nameplate-label">
+                  <span class="label-icon">🕰️</span>
+                  所属年代
+                </span>
+                <span class="nameplate-value">
+                  <span class="era-badge">{{ post.eraName }}</span>
+                </span>
+              </div>
+
+              <div class="nameplate-row">
+                <span class="nameplate-label">
+                  <span class="label-icon">📦</span>
+                  物件类别
+                </span>
+                <span class="nameplate-value">
+                  <span
+                    :class="['category-badge', getCategoryClass(post.categoryName)]"
+                    :style="getCategoryStyleVars(post.categoryName)"
+                  >
+                    <CategoryIcon :category="post.categoryName" size="xs" />
+                    {{ post.categoryName }}
                   </span>
-                  <span class="timeline-date">{{ formatEventDate(event.eventDate) }}</span>
+                </span>
+              </div>
+
+              <div class="nameplate-row" v-if="post.usageScene">
+                <span class="nameplate-label">
+                  <span class="label-icon">📍</span>
+                  使用场景
+                </span>
+                <span class="nameplate-value">{{ post.usageScene }}</span>
+              </div>
+
+              <div class="nameplate-row" v-if="post.preservationStatus">
+                <span class="nameplate-label">
+                  <span class="label-icon">✨</span>
+                  保存状态
+                </span>
+                <span class="nameplate-value">
+                  <span :class="['preservation-badge', getPreservationClass(post.preservationStatus)]">
+                    <span class="status-icon">{{ getPreservationIcon(post.preservationStatus) }}</span>
+                    {{ post.preservationStatus }}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            <div class="nameplate-footer">
+              <div class="decoration-corner tl"></div>
+              <div class="decoration-corner tr"></div>
+              <div class="decoration-corner bl"></div>
+              <div class="decoration-corner br"></div>
+            </div>
+          </div>
+
+          <div class="story-content">
+            <div class="content-section" v-if="post.storySummary">
+              <div class="section-header">
+                <span class="section-icon">📋</span>
+                <h3 class="section-title">故事摘要</h3>
+              </div>
+              <p class="summary-text">{{ post.storySummary }}</p>
+            </div>
+
+            <div class="story-layers">
+              <div class="story-layer" v-if="post.eraBackground">
+                <div class="story-layer-header">
+                  <span class="story-layer-icon">🏛️</span>
+                  <h3 class="story-layer-title">年代背景</h3>
                 </div>
-                <h4 class="timeline-title">{{ event.title }}</h4>
-                <p class="timeline-desc" v-if="event.description">{{ event.description }}</p>
-                <div class="timeline-location" v-if="event.location">
-                  📍 {{ event.location }}
+                <p class="story-layer-content">{{ post.eraBackground }}</p>
+              </div>
+
+              <div class="story-layer" v-if="post.story">
+                <div class="story-layer-header">
+                  <span class="story-layer-icon">🎁</span>
+                  <h3 class="story-layer-title">物件来历</h3>
+                </div>
+                <p class="story-layer-content">{{ post.story }}</p>
+              </div>
+
+              <div class="story-layer" v-if="post.memory">
+                <div class="story-layer-header">
+                  <span class="story-layer-icon">💭</span>
+                  <h3 class="story-layer-title">个人记忆</h3>
+                </div>
+                <p class="story-layer-content">{{ post.memory }}</p>
+              </div>
+
+              <div class="story-layer" v-if="post.currentStatus">
+                <div class="story-layer-header">
+                  <span class="story-layer-icon">📍</span>
+                  <h3 class="story-layer-title">现状</h3>
+                </div>
+                <p class="story-layer-content">{{ post.currentStatus }}</p>
+              </div>
+
+              <div class="story-layer" v-if="post.content && !post.story && !post.memory && !post.eraBackground && !post.currentStatus">
+                <div class="story-layer-header">
+                  <span class="story-layer-icon">📝</span>
+                  <h3 class="story-layer-title">物件介绍</h3>
+                </div>
+                <p class="story-layer-content">{{ post.content }}</p>
+              </div>
+            </div>
+
+            <div class="content-section" v-if="post.timelineEvents && post.timelineEvents.length > 0">
+              <div class="section-header">
+                <span class="section-icon">📅</span>
+                <h3 class="section-title">故事年表</h3>
+              </div>
+              <div class="timeline">
+                <div
+                  v-for="(event, idx) in post.timelineEvents"
+                  :key="event.id"
+                  class="timeline-item"
+                >
+                  <div class="timeline-line" v-if="idx < post.timelineEvents.length - 1"></div>
+                  <div :class="['timeline-dot', `event-${event.eventType.toLowerCase()}`]">
+                    <span class="dot-icon">{{ getEventTypeIcon(event.eventType) }}</span>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="timeline-header">
+                      <span :class="['event-tag', `tag-${event.eventType.toLowerCase()}`]">
+                        {{ getEventTypeLabel(event.eventType) }}
+                      </span>
+                      <span class="timeline-date">{{ formatEventDate(event.eventDate) }}</span>
+                    </div>
+                    <h4 class="timeline-title">{{ event.title }}</h4>
+                    <p class="timeline-desc" v-if="event.description">{{ event.description }}</p>
+                    <div class="timeline-location" v-if="event.location">
+                      📍 {{ event.location }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -175,7 +254,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { postsAPI, commentsAPI, favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
@@ -187,13 +266,11 @@ import {
   ImageOrientation, 
   getLayoutForGrid,
   getImageUrl,
-  normalizeImageList,
-  getImageOrientation,
-  getImageWidth,
-  getImageHeight
+  normalizeImageList
 } from '../utils/imageLayout'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
-import { getEraClass, normalizeEraName } from '../utils/eraUtils'
+import { normalizeEraName } from '../utils/eraUtils'
+import CategoryIcon from '../components/CategoryIcon.vue'
 
 const route = useRoute()
 const postId = computed(() => route.params.id)
@@ -206,6 +283,14 @@ const isFavorited = ref(false)
 const userSession = getSessionId()
 const imageOrientations = ref({})
 const imageLayouts = ref([])
+const activeImageIndex = ref(0)
+
+const mainImage = computed(() => {
+  if (!post.value || !post.value.images || post.value.images.length === 0) return null
+  const normalized = normalizeImageList(post.value.images)
+  const mainImg = normalized.find(img => img.isMain) || normalized[activeImageIndex.value] || normalized[0]
+  return mainImg
+})
 
 const detectDetailImagesOrientation = async (images) => {
   if (!images || images.length === 0) return
@@ -240,13 +325,6 @@ const getImgOrientation = (img) => {
 }
 
 const safeDisplayItemName = (name) => displayItemName(name)
-
-const getImageLayoutClass = (idx) => {
-  if (imageLayouts.value[idx]) {
-    return `layout-${imageLayouts.value[idx].span}`
-  }
-  return 'layout-full'
-}
 
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
@@ -403,20 +481,23 @@ onMounted(() => {
   margin-bottom: 24px;
 }
 
+.post-header {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 .post-title {
   font-size: 28px;
   font-weight: 600;
   color: #5d4e37;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .post-meta {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 20px;
 }
 
 .post-meta .author,
@@ -425,168 +506,380 @@ onMounted(() => {
   color: #999;
 }
 
-.post-images {
-  margin: 24px 0;
-}
-
-.post-images-grid {
+.split-layout {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  margin-bottom: 24px;
 }
 
-.post-image-item {
-  border-radius: 10px;
+.split-left {
+  position: sticky;
+  top: 20px;
+  align-self: start;
+}
+
+.split-right {
+  min-width: 0;
+}
+
+.main-image-area {
+  position: relative;
+}
+
+.main-image-wrapper {
+  position: relative;
+  border-radius: 12px;
   overflow: hidden;
-  background: #f5f0eb;
+  background: linear-gradient(135deg, #f5f0eb 0%, #e8d5b8 100%);
+  aspect-ratio: 4 / 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  grid-column: span 3;
+  box-shadow: 0 8px 32px rgba(93, 78, 55, 0.15);
 }
 
-.post-image-item.layout-full { grid-column: span 3; }
-.post-image-item.layout-half { grid-column: span 3; }
-.post-image-item.layout-two-thirds { grid-column: span 2; grid-row: span 2; }
-.post-image-item.layout-third { grid-column: span 1; }
-
-@media (max-width: 768px) {
-  .post-images-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .post-image-item,
-  .post-image-item.layout-full,
-  .post-image-item.layout-half,
-  .post-image-item.layout-two-thirds,
-  .post-image-item.layout-third {
-    grid-column: span 2;
-    grid-row: span 1;
-  }
+.main-image-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  border: 2px solid rgba(212, 165, 116, 0.3);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.post-image-item.img-landscape {
-  aspect-ratio: 16 / 9;
-}
-.post-image-item.img-portrait {
-  aspect-ratio: 3 / 4;
-}
-.post-image-item.img-square {
-  aspect-ratio: 1 / 1;
-}
-.post-image-item.img-detail {
-  aspect-ratio: 4 / 3;
+.image-frame-decoration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
 }
 
-.post-image-item img {
+.main-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #faf7f2;
+  padding: 16px;
 }
 
-.post-image-item.img-landscape img,
-.post-image-item.img-square img {
+.main-image-placeholder {
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5f0eb 0%, #e8d5b8 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(93, 78, 55, 0.15);
+}
+
+.placeholder-icon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.placeholder-text {
+  font-size: 14px;
+  color: #999;
+}
+
+.thumbnail-list {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.thumbnail-item {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  opacity: 0.6;
+  transition: all 0.3s;
+  background: #f5f0eb;
+}
+
+.thumbnail-item:hover {
+  opacity: 1;
+  border-color: #d4a574;
+}
+
+.thumbnail-item.active {
+  opacity: 1;
+  border-color: #d4a574;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
+}
+
+.thumbnail-item img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
-.post-body {
-  margin-bottom: 20px;
+.nameplate-card {
+  position: relative;
+  background: linear-gradient(135deg, #fefcf8 0%, #faf5ed 100%);
+  border: 1px solid #e8d5b8;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 28px;
+  box-shadow: 
+    0 4px 20px rgba(93, 78, 55, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-.archive-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.nameplate-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px double #d4a574;
 }
 
-.info-row {
-  margin-bottom: 0;
-  padding: 12px 16px;
-  background: #fdf6e3;
+.nameplate-icon {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #d4a574 0%, #b8956a 100%);
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
 }
 
-.info-label {
-  font-weight: 500;
+.nameplate-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #6b4f0f;
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.nameplate-decoration-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, #d4a574 0%, transparent 100%);
+  margin-left: 8px;
+}
+
+.nameplate-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nameplate-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.nameplate-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 90px;
+  font-size: 13px;
+  font-weight: 600;
   color: #8b6914;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #fff7e6 0%, #ffe4b8 100%);
+  border-radius: 6px;
+  border: 1px solid #e8d5b8;
+  white-space: nowrap;
 }
 
-.info-value {
+.label-icon {
+  font-size: 14px;
+}
+
+.nameplate-value {
+  flex: 1;
+  font-size: 15px;
   color: #5d4e37;
+  padding: 6px 0;
+  font-weight: 500;
+  line-height: 1.6;
 }
 
-.status-value {
+.nameplate-item-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #5d4037;
+  letter-spacing: 1px;
+}
+
+.era-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+  color: #fff;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(114, 46, 209, 0.25);
+}
+
+.category-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-weight: 500;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.status-icon {
-  font-size: 14px;
+.preservation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .preservation-excellent {
   background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
   color: #389e0d;
+  border: 1px solid #b7eb8f;
 }
 
 .preservation-good {
   background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
   color: #096dd9;
+  border: 1px solid #91d5ff;
 }
 
 .preservation-worn {
   background: linear-gradient(135deg, #fffbe6 0%, #fff1b8 100%);
   color: #d48806;
+  border: 1px solid #ffe58f;
 }
 
 .preservation-damaged {
   background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%);
   color: #cf1322;
+  border: 1px solid #ffa39e;
 }
 
 .preservation-default {
   background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
   color: #595959;
+  border: 1px solid #d9d9d9;
+}
+
+.status-icon {
+  font-size: 13px;
+}
+
+.nameplate-footer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.decoration-corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #d4a574;
+}
+
+.decoration-corner.tl {
+  top: 8px;
+  left: 8px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 4px;
+}
+
+.decoration-corner.tr {
+  top: 8px;
+  right: 8px;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 4px;
+}
+
+.decoration-corner.bl {
+  bottom: 8px;
+  left: 8px;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 4px;
+}
+
+.decoration-corner.br {
+  bottom: 8px;
+  right: 8px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 4px;
+}
+
+.story-content {
+  min-width: 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.section-icon {
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5e6d3 0%, #e8d5b8 100%);
+  border-radius: 8px;
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #6b4f0f;
+  margin: 0;
+}
+
+.content-section {
+  margin-bottom: 28px;
 }
 
 .summary-text {
   font-size: 15px;
   line-height: 1.8;
   color: #6b4f0f;
-  padding: 16px 20px;
+  padding: 18px 22px;
   background: linear-gradient(135deg, #fffbe6 0%, #fff7e6 100%);
   border-left: 4px solid #faad14;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 10px 10px 0;
   font-style: italic;
-}
-
-.content-section {
-  margin-bottom: 24px;
-}
-
-.section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #6b4f0f;
-  margin-bottom: 12px;
-}
-
-.content-text {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #5d4e37;
-  white-space: pre-wrap;
+  margin: 0;
 }
 
 .story-layers {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .story-layer {
@@ -599,22 +892,22 @@ onMounted(() => {
 
 .story-layer:hover {
   transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(139, 105, 20, 0.1);
+  box-shadow: 0 4px 16px rgba(139, 105, 20, 0.12);
 }
 
 .story-layer:nth-child(1) {
+  border-left-color: #722ed1;
+  background: linear-gradient(135deg, #f9f0ff 0%, #faf5ff 100%);
+}
+
+.story-layer:nth-child(2) {
   border-left-color: #52c41a;
   background: linear-gradient(135deg, #f6ffed 0%, #fcffe6 100%);
 }
 
-.story-layer:nth-child(2) {
+.story-layer:nth-child(3) {
   border-left-color: #1890ff;
   background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
-}
-
-.story-layer:nth-child(3) {
-  border-left-color: #722ed1;
-  background: linear-gradient(135deg, #f9f0ff 0%, #faf5ff 100%);
 }
 
 .story-layer:nth-child(4) {
@@ -630,13 +923,13 @@ onMounted(() => {
 }
 
 .story-layer-icon {
-  font-size: 20px;
-  width: 36px;
-  height: 36px;
+  font-size: 18px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 50%;
 }
 
@@ -649,11 +942,11 @@ onMounted(() => {
 
 .story-layer-content {
   font-size: 15px;
-  line-height: 1.85;
+  line-height: 1.9;
   color: #5d4e37;
   white-space: pre-wrap;
   margin: 0;
-  padding-left: 46px;
+  padding-left: 44px;
 }
 
 .post-footer {
@@ -661,23 +954,25 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding-top: 20px;
+  margin-top: 24px;
   border-top: 1px solid #f0f0f0;
 }
 
 .stats {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   font-size: 14px;
   color: #999;
 }
 
 .favorite-btn {
-  padding: 10px 24px;
+  padding: 10px 28px;
   border-radius: 20px;
   font-size: 14px;
   background: #f5e6d3;
   color: #8b6914;
   transition: all 0.3s;
+  font-weight: 500;
 }
 
 .favorite-btn:hover {
@@ -690,7 +985,7 @@ onMounted(() => {
 }
 
 .comments-section {
-  padding: 24px;
+  padding: 28px;
 }
 
 .comments-title {
@@ -759,7 +1054,7 @@ onMounted(() => {
 }
 
 .comment-author {
-  font-weight: 500;
+  font-weight: 600;
   color: #8b6914;
   font-size: 14px;
 }
@@ -773,6 +1068,7 @@ onMounted(() => {
   font-size: 14px;
   line-height: 1.7;
   color: #5d4e37;
+  margin: 0;
 }
 
 .empty-comments {
@@ -784,12 +1080,12 @@ onMounted(() => {
 
 .timeline {
   position: relative;
-  padding-left: 40px;
+  padding-left: 44px;
 }
 
 .timeline-item {
   position: relative;
-  padding-bottom: 32px;
+  padding-bottom: 28px;
 }
 
 .timeline-item:last-child {
@@ -807,7 +1103,7 @@ onMounted(() => {
 
 .timeline-dot {
   position: absolute;
-  left: -40px;
+  left: -44px;
   top: 0;
   width: 32px;
   height: 32px;
@@ -865,7 +1161,7 @@ onMounted(() => {
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: #fff;
 }
 
@@ -910,32 +1206,92 @@ onMounted(() => {
   color: #8b6914;
 }
 
+@media (max-width: 1024px) {
+  .split-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .split-left {
+    position: static;
+  }
+
+  .story-layer-content {
+    padding-left: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .detail-card {
     padding: 20px;
   }
+
   .post-title {
     font-size: 22px;
   }
-  .archive-info-grid {
-    grid-template-columns: 1fr;
+
+  .nameplate-card {
+    padding: 18px;
   }
-  .timeline {
-    padding-left: 32px;
+
+  .nameplate-row {
+    flex-direction: column;
+    gap: 6px;
   }
-  .timeline-dot {
-    left: -32px;
-    width: 28px;
-    height: 28px;
+
+  .nameplate-label {
+    min-width: auto;
+    align-self: flex-start;
   }
-  .timeline-line {
-    left: 13px;
+
+  .nameplate-item-name {
+    font-size: 16px;
   }
+
+  .thumbnail-item {
+    width: 52px;
+    height: 52px;
+  }
+
   .story-layer {
     padding: 16px;
   }
-  .story-layer-content {
-    padding-left: 0;
+
+  .timeline {
+    padding-left: 36px;
+  }
+
+  .timeline-dot {
+    left: -36px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .timeline-line {
+    left: 13px;
+  }
+
+  .post-footer {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .stats {
+    gap: 16px;
+  }
+
+  .comments-section {
+    padding: 20px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-actions input {
+    max-width: none;
   }
 }
 </style>

@@ -46,6 +46,9 @@ public class Post {
     @Column(name = "preservation_status", length = 50)
     private String preservationStatus;
 
+    @Column(name = "usage_scene", length = 100)
+    private String usageScene;
+
     @Column(name = "story_summary", length = 500)
     private String storySummary;
 

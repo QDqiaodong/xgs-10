@@ -94,6 +94,16 @@
               </select>
             </div>
             <div class="form-group">
+              <label>使用场景</label>
+              <input
+                v-model="form.usageScene"
+                type="text"
+                placeholder="例如：家庭客厅 / 学校教室 / 工厂车间"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>你的昵称</label>
               <input
                 v-model="form.authorName"
@@ -278,6 +288,7 @@ const form = reactive({
   eraId: '',
   authorName: '',
   preservationStatus: '',
+  usageScene: '',
   storySummary: '',
   content: '',
   story: '',
@@ -402,6 +413,7 @@ const handleSubmit = async () => {
     formData.append('eraId', Number(form.eraId))
     if (form.authorName) formData.append('authorName', form.authorName)
     if (form.preservationStatus) formData.append('preservationStatus', form.preservationStatus)
+    if (form.usageScene) formData.append('usageScene', form.usageScene)
     if (form.storySummary) formData.append('storySummary', form.storySummary)
     formData.append('content', form.content)
     if (form.story) formData.append('story', form.story)
