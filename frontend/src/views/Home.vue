@@ -12,6 +12,61 @@
       </div>
     </section>
 
+    <section class="category-showcase-section">
+      <h2 class="section-title showcase-title">
+        <span class="title-icon">🗂️</span>
+        类别展柜
+        <span class="title-subtitle">按品类探索，发现不同类型的珍贵老物件</span>
+      </h2>
+      <div class="showcase-container">
+        <div class="showcase-track">
+          <div
+            v-for="(cat, index) in categoryShowcase"
+            :key="cat.id"
+            :class="['showcase-card', `showcase-cat-${getCategoryKey(cat.name)}`]"
+            :style="getCategoryStyleVars(cat.name)"
+            @click="selectShowcaseCategory(cat.id)"
+          >
+            <div class="showcase-connector" v-if="index < categoryShowcase.length - 1">
+              <div class="connector-line"></div>
+              <div class="connector-dot"></div>
+            </div>
+            <div class="showcase-header">
+              <div class="showcase-cat-icon">
+                <CategoryIcon :category="cat.name" size="xl" mode="emoji" />
+              </div>
+              <div class="showcase-cat-info">
+                <h3 class="showcase-cat-name">{{ cat.name }}</h3>
+                <span class="showcase-cat-desc">{{ getCategoryDescription(cat.name) }}</span>
+              </div>
+              <div class="showcase-post-count">
+                <span class="count-num">{{ cat.postCount }}</span>
+                <span class="count-label">件珍藏</span>
+              </div>
+            </div>
+            <div class="showcase-preview" v-if="cat.representativePosts && cat.representativePosts.length > 0">
+              <router-link
+                v-for="post in cat.representativePosts.slice(0, 3)"
+                :key="post.id"
+                :to="`/post/${post.id}`"
+                class="showcase-preview-item"
+                @click.stop
+              >
+                <img
+                  :src="getFirstImgUrl(post.images) || 'https://picsum.photos/120/120'"
+                  :alt="post.title"
+                />
+              </router-link>
+            </div>
+            <div class="showcase-enter">
+              <span>进入展柜</span>
+              <span class="enter-arrow">→</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="timeline-section">
       <h2 class="section-title timeline-title">
         <span class="title-icon">⏳</span>
@@ -224,12 +279,14 @@ import {
   normalizeImageList,
   getMainImage
 } from '../utils/imageLayout'
-import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
+import { getCategoryClass, getCategoryStyleVars, getCategoryDescription } from '../icons/categoryUtils'
+import { getCategoryConfig } from '../icons/categories'
 import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
 
 const router = useRouter()
 
 const categories = ref([])
+const categoryShowcase = ref([])
 const eras = ref([])
 const eraTimeline = ref([])
 const posts = ref([])
@@ -240,6 +297,10 @@ const currentPage = ref(0)
 const totalPages = ref(1)
 const pageSize = 10
 const imageOrientations = ref({})
+
+const getCategoryKey = (categoryName) => {
+  return getCategoryConfig(categoryName).key
+}
 
 const detectPostImagesOrientation = async (postsList) => {
   if (!postsList || postsList.length === 0) return
@@ -297,6 +358,32 @@ const loadCategories = async () => {
   } catch (e) {
     console.error('加载分类失败', e)
   }
+}
+
+const loadCategoryShowcase = async () => {
+  try {
+    const res = await categoriesAPI.getShowcase()
+    categoryShowcase.value = res.data
+    nextTick(() => {
+      const allPosts = categoryShowcase.value.flatMap(cat => cat.representativePosts || [])
+      detectPostImagesOrientation(allPosts)
+    })
+  } catch (e) {
+    console.error('加载类别展柜失败', e)
+  }
+}
+
+const selectShowcaseCategory = (catId) => {
+  selectedCategory.value = catId
+  selectedEra.value = null
+  currentPage.value = 0
+  loadPosts()
+  setTimeout(() => {
+    const filterSection = document.querySelector('.filter-section')
+    if (filterSection) {
+      filterSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, 100)
 }
 
 const loadEras = async () => {
@@ -390,6 +477,7 @@ const changePage = (page) => {
 
 onMounted(() => {
   loadCategories()
+  loadCategoryShowcase()
   loadEras()
   loadEraTimeline()
   loadPosts()
@@ -454,6 +542,279 @@ onMounted(() => {
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 0.7; }
   50% { transform: scale(1.2); opacity: 1; }
+}
+
+.category-showcase-section {
+  margin-bottom: 40px;
+}
+
+.showcase-title {
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.showcase-container {
+  overflow-x: auto;
+  padding: 10px 4px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cat-primary, #d4a574) var(--cat-secondary, #f5e6d3);
+}
+
+.showcase-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.showcase-container::-webkit-scrollbar-track {
+  background: #f5e6d3;
+  border-radius: 4px;
+}
+
+.showcase-container::-webkit-scrollbar-thumb {
+  background: #d4a574;
+  border-radius: 4px;
+}
+
+.showcase-track {
+  display: flex;
+  gap: 20px;
+  padding-right: 20px;
+  min-width: min-content;
+}
+
+.showcase-card {
+  position: relative;
+  flex: 0 0 280px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 20px 20px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid transparent;
+  overflow: hidden;
+}
+
+.showcase-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  opacity: 0.8;
+  background: var(--cat-gradient);
+}
+
+.showcase-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 16px 40px rgba(93, 78, 55, 0.2);
+  border-color: var(--cat-primary);
+}
+
+.showcase-cat-homeAppliances {
+  border-color: rgba(198, 40, 40, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #fff5f5 100%);
+}
+.showcase-cat-homeAppliances::before { background: linear-gradient(90deg, #c62828, #ef5350); }
+.showcase-cat-homeAppliances:hover { border-color: #c62828; }
+
+.showcase-cat-audioVideo {
+  border-color: rgba(106, 27, 154, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #faf5fc 100%);
+}
+.showcase-cat-audioVideo::before { background: linear-gradient(90deg, #6a1b9a, #ab47bc); }
+.showcase-cat-audioVideo:hover { border-color: #6a1b9a; }
+
+.showcase-cat-communication {
+  border-color: rgba(2, 119, 189, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #f0f8fc 100%);
+}
+.showcase-cat-communication::before { background: linear-gradient(90deg, #0277bd, #29b6f6); }
+.showcase-cat-communication:hover { border-color: #0277bd; }
+
+.showcase-cat-toys {
+  border-color: rgba(230, 81, 0, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #fff8f0 100%);
+}
+.showcase-cat-toys::before { background: linear-gradient(90deg, #e65100, #ff9800); }
+.showcase-cat-toys:hover { border-color: #e65100; }
+
+.showcase-cat-stationery {
+  border-color: rgba(46, 125, 50, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #f1f8f2 100%);
+}
+.showcase-cat-stationery::before { background: linear-gradient(90deg, #2e7d32, #66bb6a); }
+.showcase-cat-stationery:hover { border-color: #2e7d32; }
+
+.showcase-cat-clothing {
+  border-color: rgba(173, 20, 87, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #fbf5f8 100%);
+}
+.showcase-cat-clothing::before { background: linear-gradient(90deg, #ad1457, #ec407a); }
+.showcase-cat-clothing:hover { border-color: #ad1457; }
+
+.showcase-cat-food {
+  border-color: rgba(245, 124, 0, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #fff8f0 100%);
+}
+.showcase-cat-food::before { background: linear-gradient(90deg, #f57c00, #ffa726); }
+.showcase-cat-food:hover { border-color: #f57c00; }
+
+.showcase-cat-daily {
+  border-color: rgba(93, 64, 55, 0.2);
+  background: linear-gradient(180deg, #fff 0%, #faf6f2 100%);
+}
+.showcase-cat-daily::before { background: linear-gradient(90deg, #5d4037, #8d6e63); }
+.showcase-cat-daily:hover { border-color: #5d4037; }
+
+.showcase-connector {
+  position: absolute;
+  top: 30px;
+  right: -20px;
+  width: 20px;
+  height: 2px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
+.showcase-connector .connector-line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cat-primary, #d4a574), transparent);
+}
+
+.showcase-connector .connector-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cat-primary, #d4a574);
+  flex-shrink: 0;
+}
+
+.showcase-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.showcase-cat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--cat-bg-gradient);
+  border: 1.5px solid var(--cat-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.showcase-cat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.showcase-cat-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+  color: var(--cat-text);
+}
+
+.showcase-cat-desc {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+  display: block;
+}
+
+.showcase-post-count {
+  text-align: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: var(--cat-bg-gradient);
+}
+
+.showcase-post-count .count-num {
+  font-size: 18px;
+  font-weight: 700;
+  display: block;
+  line-height: 1;
+  color: var(--cat-primary);
+}
+
+.showcase-post-count .count-label {
+  font-size: 10px;
+  color: #999;
+}
+
+.showcase-preview {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.showcase-preview-item {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: transform 0.3s;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.showcase-preview-item:hover {
+  transform: scale(1.1);
+  z-index: 2;
+}
+
+.showcase-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.showcase-enter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s;
+  background: var(--cat-bg-gradient);
+  color: var(--cat-primary);
+}
+
+.showcase-card:hover .showcase-enter {
+  background: var(--cat-gradient);
+  color: #fff;
+}
+
+.showcase-card:hover .enter-arrow {
+  transform: translateX(4px);
+}
+
+.enter-arrow {
+  transition: transform 0.3s;
+}
+
+@media (max-width: 768px) {
+  .showcase-card {
+    flex: 0 0 250px;
+  }
+  .showcase-connector {
+    display: none;
+  }
 }
 
 .filter-section {

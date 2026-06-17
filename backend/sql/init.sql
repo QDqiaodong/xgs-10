@@ -92,13 +92,13 @@ CREATE TABLE IF NOT EXISTS timeline_events (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO categories (name, icon, sort_order) VALUES
-('家用电器', '🔌', 1),
-('影音设备', '�', 2),
-('通讯工具', '☎️', 3),
-('玩具玩偶', '🎠', 4),
-('文具书籍', '�', 5),
-('服饰配饰', '🧥', 6),
-('食品饮料', '�', 7),
+('家用电器', '🏠', 1),
+('影音设备', '📺', 2),
+('通讯工具', '📞', 3),
+('玩具玩偶', '🧸', 4),
+('文具书籍', '📚', 5),
+('服饰配饰', '👕', 6),
+('食品饮料', '🍬', 7),
 ('日常用品', '🪑', 8);
 
 INSERT INTO eras (name, year_start, year_end, description, icon, color_scheme, representative_categories, sort_order) VALUES

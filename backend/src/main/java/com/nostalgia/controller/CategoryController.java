@@ -1,5 +1,6 @@
 package com.nostalgia.controller;
 
+import com.nostalgia.dto.CategoryShowcaseDTO;
 import com.nostalgia.entity.Category;
 import com.nostalgia.service.CategoryService;
 import lombok.RequiredArgsConstructor;
@@ -20,5 +21,10 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
+    }
+
+    @GetMapping("/showcase")
+    public ResponseEntity<List<CategoryShowcaseDTO>> getCategoryShowcase() {
+        return ResponseEntity.ok(categoryService.getCategoryShowcase());
     }
 }

@@ -8,7 +8,8 @@ const api = axios.create({
 })
 
 export const categoriesAPI = {
-  getAll: () => api.get('/categories')
+  getAll: () => api.get('/categories'),
+  getShowcase: () => api.get('/categories/showcase')
 }
 
 export const erasAPI = {
