@@ -41,14 +41,37 @@
         </div>
 
         <div class="split-right">
-          <div class="nameplate-card">
-            <div class="nameplate-header">
+          <div class="story-content story-content-top mobile-first">
+            <div class="content-section" v-if="post.storySummary">
+              <div class="section-header">
+                <span class="section-icon">📋</span>
+                <h3 class="section-title">故事摘要</h3>
+              </div>
+              <p class="summary-text">{{ post.storySummary }}</p>
+            </div>
+          </div>
+
+          <div :class="['nameplate-card', { 'nameplate-collapsed': !effectiveNameplateExpanded }]">
+            <div class="nameplate-header" @click="toggleNameplate">
               <div class="nameplate-icon">📜</div>
               <h2 class="nameplate-title">物件铭牌</h2>
               <div class="nameplate-decoration-line"></div>
+              <span class="nameplate-toggle-icon" :class="{ expanded: effectiveNameplateExpanded }">▼</span>
             </div>
 
-            <div class="nameplate-body">
+            <div class="nameplate-compact-summary" v-if="!effectiveNameplateExpanded">
+              <span class="nameplate-compact-name">{{ safeDisplayItemName(post.itemName) }}</span>
+              <span class="era-badge">{{ post.eraName }}</span>
+              <span
+                :class="['category-badge', getCategoryClass(post.categoryName)]"
+                :style="getCategoryStyleVars(post.categoryName)"
+              >
+                <CategoryIcon :category="post.categoryName" size="xs" />
+                {{ post.categoryName }}
+              </span>
+            </div>
+
+            <div class="nameplate-body" :class="{ 'nameplate-body-hidden': !effectiveNameplateExpanded }">
               <div class="nameplate-row">
                 <span class="nameplate-label">
                   <span class="label-icon">🏷️</span>
@@ -116,7 +139,7 @@
           </div>
 
           <div class="story-content">
-            <div class="content-section" v-if="post.storySummary">
+            <div class="content-section story-summary-desktop" v-if="post.storySummary">
               <div class="section-header">
                 <span class="section-icon">📋</span>
                 <h3 class="section-title">故事摘要</h3>
@@ -254,7 +277,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { postsAPI, commentsAPI, favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
@@ -284,6 +307,34 @@ const userSession = getSessionId()
 const imageOrientations = ref({})
 const imageLayouts = ref([])
 const activeImageIndex = ref(0)
+const isNameplateExpanded = ref(false)
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+const effectiveNameplateExpanded = computed(() => {
+  return !isMobile.value || isNameplateExpanded.value
+})
+
+const toggleNameplate = () => {
+  if (isMobile.value) {
+    isNameplateExpanded.value = !isNameplateExpanded.value
+  }
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  loadPost()
+  loadComments()
+  checkFavorite()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 
 const mainImage = computed(() => {
   if (!post.value || !post.value.images || post.value.images.length === 0) return null
@@ -456,12 +507,6 @@ const submitComment = async () => {
     console.error('发表评论失败', e)
   }
 }
-
-onMounted(() => {
-  loadPost()
-  loadComments()
-  checkFavorite()
-})
 </script>
 
 <style scoped>
@@ -833,6 +878,64 @@ onMounted(() => {
 
 .story-content {
   min-width: 0;
+}
+
+.story-content-top.mobile-first {
+  display: none;
+}
+
+.story-summary-desktop {
+  display: block;
+}
+
+.nameplate-toggle-icon {
+  font-size: 12px;
+  color: #8b6914;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.nameplate-toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.nameplate-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.nameplate-compact-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 4px 0;
+}
+
+.nameplate-compact-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #5d4037;
+  letter-spacing: 1px;
+}
+
+.nameplate-body-hidden {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: all 0.3s ease;
+}
+
+.nameplate-body:not(.nameplate-body-hidden) {
+  max-height: 2000px;
+  opacity: 1;
+  transition: all 0.3s ease;
+}
+
+.nameplate-card.nameplate-collapsed {
+  padding-bottom: 20px;
 }
 
 .section-header {
@@ -1230,8 +1333,45 @@ onMounted(() => {
     font-size: 22px;
   }
 
+  .story-content-top.mobile-first {
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .story-summary-desktop {
+    display: none;
+  }
+
   .nameplate-card {
     padding: 18px;
+  }
+
+  .nameplate-card.nameplate-collapsed {
+    padding: 14px 18px;
+  }
+
+  .nameplate-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .nameplate-card:not(.nameplate-collapsed) .nameplate-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px double #d4a574;
+  }
+
+  .nameplate-title {
+    font-size: 16px;
+  }
+
+  .nameplate-compact-summary {
+    padding: 10px 0 2px 0;
+  }
+
+  .nameplate-compact-name {
+    font-size: 15px;
   }
 
   .nameplate-row {
