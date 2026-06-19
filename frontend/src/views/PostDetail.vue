@@ -328,7 +328,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { postsAPI, commentsAPI, favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
@@ -374,6 +374,25 @@ const toggleNameplate = () => {
     isNameplateExpanded.value = !isNameplateExpanded.value
   }
 }
+
+const resetState = () => {
+  post.value = null
+  comments.value = []
+  newComment.value = ''
+  commentAuthor.value = ''
+  isFavorited.value = false
+  imageOrientations.value = {}
+  imageLayouts.value = []
+  activeImageIndex.value = 0
+  isNameplateExpanded.value = false
+}
+
+watch(postId, () => {
+  resetState()
+  loadPost()
+  loadComments()
+  checkFavorite()
+})
 
 onMounted(() => {
   checkMobile()

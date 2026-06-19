@@ -120,4 +120,77 @@
   text-align: center;
   font-size: 14px;
 }
+
+@media (max-width: 768px) {
+  .header {
+    padding: 12px 0;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .logo {
+    gap: 8px;
+  }
+
+  .logo-icon {
+    font-size: 24px;
+  }
+
+  .logo-text {
+    font-size: 18px;
+  }
+
+  .nav {
+    gap: 20px;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    font-size: 14px;
+  }
+
+  .publish-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  .main {
+    padding: 20px 0;
+    min-height: calc(100vh - 160px);
+  }
+
+  .footer {
+    padding: 16px 0;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav {
+    gap: 16px;
+  }
+
+  .nav-link {
+    font-size: 13px;
+  }
+
+  .publish-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  .logo-text {
+    font-size: 16px;
+  }
+
+  .nav-link.router-link-active::after {
+    bottom: -4px;
+    height: 2px;
+  }
+}
 </style>
