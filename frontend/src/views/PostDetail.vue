@@ -42,7 +42,7 @@
 
         <div class="split-right">
           <div class="story-content story-content-top mobile-first">
-            <div class="content-section" v-if="post.storySummary || post.itemSource || (post.emotionKeywords && post.emotionKeywords.length > 0)">
+            <div class="content-section" v-if="buildDetailSummary(post) || post.itemSource || (post.emotionKeywords && post.emotionKeywords.length > 0)">
               <div class="section-header">
                 <span class="section-icon">📋</span>
                 <h3 class="section-title">故事摘要</h3>
@@ -50,20 +50,20 @@
               <div class="summary-structured" v-if="post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
                 <div class="summary-row" v-if="post.itemSource">
                   <span class="summary-label">📦 来源</span>
-                  <span class="summary-value summary-source-value">{{ post.itemSource }}</span>
+                  <span class="summary-value summary-source-value">{{ truncateForChip(post.itemSource, 60) }}</span>
                 </div>
                 <div class="summary-row" v-if="post.usageScene">
                   <span class="summary-label">📍 场景</span>
-                  <span class="summary-value summary-scene-value">{{ post.usageScene }}</span>
+                  <span class="summary-value summary-scene-value">{{ truncateForChip(post.usageScene, 60) }}</span>
                 </div>
                 <div class="summary-row" v-if="post.emotionKeywords && post.emotionKeywords.length > 0">
                   <span class="summary-label">💭 情感</span>
                   <div class="summary-emotion-tags">
-                    <span class="emotion-tag" v-for="kw in post.emotionKeywords" :key="kw">{{ kw }}</span>
+                    <span class="emotion-tag" v-for="kw in post.emotionKeywords" :key="kw">{{ truncateForChip(kw) }}</span>
                   </div>
                 </div>
               </div>
-              <p class="summary-text" v-if="post.storySummary && (!post.itemSource && !post.usageScene && !(post.emotionKeywords && post.emotionKeywords.length > 0))">{{ post.storySummary }}</p>
+              <p class="summary-text" v-if="buildDetailSummary(post)">{{ buildDetailSummary(post) }}</p>
             </div>
           </div>
 
@@ -174,7 +174,7 @@
           </div>
 
           <div class="story-content">
-            <div class="content-section story-summary-desktop" v-if="post.storySummary || post.itemSource || (post.emotionKeywords && post.emotionKeywords.length > 0)">
+            <div class="content-section story-summary-desktop" v-if="buildDetailSummary(post) || post.itemSource || (post.emotionKeywords && post.emotionKeywords.length > 0)">
               <div class="section-header">
                 <span class="section-icon">📋</span>
                 <h3 class="section-title">故事摘要</h3>
@@ -182,20 +182,20 @@
               <div class="summary-structured" v-if="post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
                 <div class="summary-row" v-if="post.itemSource">
                   <span class="summary-label">📦 来源</span>
-                  <span class="summary-value summary-source-value">{{ post.itemSource }}</span>
+                  <span class="summary-value summary-source-value">{{ truncateForChip(post.itemSource, 60) }}</span>
                 </div>
                 <div class="summary-row" v-if="post.usageScene">
                   <span class="summary-label">📍 场景</span>
-                  <span class="summary-value summary-scene-value">{{ post.usageScene }}</span>
+                  <span class="summary-value summary-scene-value">{{ truncateForChip(post.usageScene, 60) }}</span>
                 </div>
                 <div class="summary-row" v-if="post.emotionKeywords && post.emotionKeywords.length > 0">
                   <span class="summary-label">💭 情感</span>
                   <div class="summary-emotion-tags">
-                    <span class="emotion-tag" v-for="kw in post.emotionKeywords" :key="kw">{{ kw }}</span>
+                    <span class="emotion-tag" v-for="kw in post.emotionKeywords" :key="kw">{{ truncateForChip(kw) }}</span>
                   </div>
                 </div>
               </div>
-              <p class="summary-text" v-if="post.storySummary && (!post.itemSource && !post.usageScene && !(post.emotionKeywords && post.emotionKeywords.length > 0))">{{ post.storySummary }}</p>
+              <p class="summary-text" v-if="buildDetailSummary(post)">{{ buildDetailSummary(post) }}</p>
             </div>
 
             <div class="story-layers">
@@ -203,40 +203,75 @@
                 <div class="story-layer-header">
                   <span class="story-layer-icon">🏛️</span>
                   <h3 class="story-layer-title">年代背景</h3>
+                  <button
+                    v-if="shouldCollapseStory(post.eraBackground)"
+                    class="toggle-story-btn"
+                    @click="toggleLayer('eraBackground')"
+                  >
+                    {{ isLayerExpanded('eraBackground') ? '收起 ↑' : '展开 ↓' }}
+                  </button>
                 </div>
-                <p class="story-layer-content">{{ post.eraBackground }}</p>
+                <p class="story-layer-content">{{ getLayerDisplayText(post.eraBackground, 'eraBackground') }}</p>
               </div>
 
               <div class="story-layer" v-if="post.story">
                 <div class="story-layer-header">
                   <span class="story-layer-icon">🎁</span>
                   <h3 class="story-layer-title">物件来历</h3>
+                  <button
+                    v-if="shouldCollapseStory(post.story)"
+                    class="toggle-story-btn"
+                    @click="toggleLayer('story')"
+                  >
+                    {{ isLayerExpanded('story') ? '收起 ↑' : '展开 ↓' }}
+                  </button>
                 </div>
-                <p class="story-layer-content">{{ post.story }}</p>
+                <p class="story-layer-content">{{ getLayerDisplayText(post.story, 'story') }}</p>
               </div>
 
               <div class="story-layer" v-if="post.memory">
                 <div class="story-layer-header">
                   <span class="story-layer-icon">💭</span>
                   <h3 class="story-layer-title">个人记忆</h3>
+                  <button
+                    v-if="shouldCollapseStory(post.memory)"
+                    class="toggle-story-btn"
+                    @click="toggleLayer('memory')"
+                  >
+                    {{ isLayerExpanded('memory') ? '收起 ↑' : '展开 ↓' }}
+                  </button>
                 </div>
-                <p class="story-layer-content">{{ post.memory }}</p>
+                <p class="story-layer-content">{{ getLayerDisplayText(post.memory, 'memory') }}</p>
               </div>
 
               <div class="story-layer" v-if="post.currentStatus">
                 <div class="story-layer-header">
                   <span class="story-layer-icon">📍</span>
                   <h3 class="story-layer-title">现状</h3>
+                  <button
+                    v-if="shouldCollapseStory(post.currentStatus)"
+                    class="toggle-story-btn"
+                    @click="toggleLayer('currentStatus')"
+                  >
+                    {{ isLayerExpanded('currentStatus') ? '收起 ↑' : '展开 ↓' }}
+                  </button>
                 </div>
-                <p class="story-layer-content">{{ post.currentStatus }}</p>
+                <p class="story-layer-content">{{ getLayerDisplayText(post.currentStatus, 'currentStatus') }}</p>
               </div>
 
               <div class="story-layer" v-if="post.content && !post.story && !post.memory && !post.eraBackground && !post.currentStatus">
                 <div class="story-layer-header">
                   <span class="story-layer-icon">📝</span>
                   <h3 class="story-layer-title">物件介绍</h3>
+                  <button
+                    v-if="shouldCollapseStory(post.content)"
+                    class="toggle-story-btn"
+                    @click="toggleLayer('content')"
+                  >
+                    {{ isLayerExpanded('content') ? '收起 ↑' : '展开 ↓' }}
+                  </button>
                 </div>
-                <p class="story-layer-content">{{ post.content }}</p>
+                <p class="story-layer-content">{{ getLayerDisplayText(post.content, 'content') }}</p>
               </div>
             </div>
 
@@ -332,7 +367,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { postsAPI, commentsAPI, favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
-import { displayItemName } from '../utils/textCleaner'
+import { displayItemName, buildDetailSummary, shouldCollapseStory, truncateForDetailSummary, truncateForChip } from '../utils/textCleaner'
 import { 
   detectImageOrientationFromUrl, 
   detectImageOrientation,
@@ -360,6 +395,23 @@ const imageLayouts = ref([])
 const activeImageIndex = ref(0)
 const isNameplateExpanded = ref(false)
 const isMobile = ref(false)
+const expandedLayers = ref({})
+
+const toggleLayer = (key) => {
+  expandedLayers.value[key] = !expandedLayers.value[key]
+}
+
+const isLayerExpanded = (key) => {
+  return !!expandedLayers.value[key]
+}
+
+const getLayerDisplayText = (text, key) => {
+  if (!text) return ''
+  if (!shouldCollapseStory(text) || isLayerExpanded(key)) {
+    return text
+  }
+  return truncateForDetailSummary(text, 400)
+}
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768
@@ -1180,6 +1232,25 @@ const submitComment = async () => {
   font-weight: 600;
   color: #5d4e37;
   margin: 0;
+}
+
+.toggle-story-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(139, 105, 20, 0.1);
+  color: #8b6914;
+  border: 1px solid rgba(139, 105, 20, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.toggle-story-btn:hover {
+  background: rgba(139, 105, 20, 0.2);
+  transform: translateY(-1px);
 }
 
 .story-layer-content {

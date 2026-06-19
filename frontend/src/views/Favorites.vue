@@ -16,7 +16,7 @@
         <div class="post-content">
           <h3 class="post-title">{{ post.title }}</h3>
           <p class="post-item">物件：{{ safeDisplayItemName(post.itemName) }}</p>
-          <p class="post-excerpt">{{ post.content }}</p>
+          <p class="post-excerpt">{{ buildCardSummary(post) }}</p>
           <div class="post-tags">
             <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
               <CategoryIcon :category="post.categoryName" size="xs" />
@@ -47,7 +47,7 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { favoritesAPI } from '../api'
 import { getSessionId } from '../utils/session'
-import { displayItemName } from '../utils/textCleaner'
+import { displayItemName, buildCardSummary } from '../utils/textCleaner'
 import { 
   detectImageOrientationFromUrl, 
   detectImageOrientation,

@@ -144,16 +144,16 @@
                   <p class="item-title">{{ item.title }}</p>
                   <div class="item-summary-structured" v-if="item.itemSource || item.usageScene || (item.emotionKeywords && item.emotionKeywords.length > 0)">
                     <span class="summary-chip summary-source" v-if="item.itemSource">
-                      <span class="chip-icon">📦</span>{{ item.itemSource }}
+                      <span class="chip-icon">📦</span>{{ truncateForChip(item.itemSource) }}
                     </span>
                     <span class="summary-chip summary-scene" v-if="item.usageScene">
-                      <span class="chip-icon">📍</span>{{ item.usageScene }}
+                      <span class="chip-icon">📍</span>{{ truncateForChip(item.usageScene) }}
                     </span>
                     <span class="summary-chip summary-emotion" v-for="kw in (item.emotionKeywords || []).slice(0, 3)" :key="kw">
-                      <span class="chip-icon">💭</span>{{ kw }}
+                      <span class="chip-icon">💭</span>{{ truncateForChip(kw) }}
                     </span>
                   </div>
-                  <p class="item-summary" v-else>{{ item.storySummary || '暂无故事摘要' }}</p>
+                  <p class="item-summary">{{ buildArchiveSummary(item) || '暂无故事摘要' }}</p>
                   <div class="item-footer">
                     <span class="item-tags">
                       <span :class="['tag', 'tag-cat', getCategoryClass(item.categoryName)]" :style="getCategoryStyleVars(item.categoryName)">
@@ -199,7 +199,7 @@
           <div class="item-content">
             <h4 class="item-name">{{ safeDisplayItemName(item.itemName) }}</h4>
             <p class="item-title">{{ item.title }}</p>
-            <p class="item-summary">{{ item.storySummary || '暂无故事摘要' }}</p>
+            <p class="item-summary">{{ buildArchiveSummary(item) || '暂无故事摘要' }}</p>
             <div class="item-footer">
               <span class="item-tags">
                 <span :class="['tag', 'tag-cat', getCategoryClass(item.categoryName)]" :style="getCategoryStyleVars(item.categoryName)">
@@ -242,7 +242,7 @@
 <script setup>
 import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { archivesAPI } from '../api'
-import { displayItemName } from '../utils/textCleaner'
+import { displayItemName, buildArchiveSummary, truncateForChip } from '../utils/textCleaner'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
 import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
 import { getImageUrl, getMainImage } from '../utils/imageLayout'

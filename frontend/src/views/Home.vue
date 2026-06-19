@@ -186,10 +186,10 @@
             <h3 :class="['hot-title', `title-${getEraClass(post.eraName)}`]">{{ post.title }}</h3>
             <div class="hot-summary-structured" v-if="post.itemSource || (post.emotionKeywords && post.emotionKeywords.length > 0)">
               <span class="summary-chip summary-source" v-if="post.itemSource">
-                <span class="chip-icon">📦</span>{{ post.itemSource }}
+                <span class="chip-icon">📦</span>{{ truncateForChip(post.itemSource) }}
               </span>
               <span class="summary-chip summary-emotion" v-for="kw in (post.emotionKeywords || []).slice(0, 2)" :key="kw">
-                <span class="chip-icon">💭</span>{{ kw }}
+                <span class="chip-icon">💭</span>{{ truncateForChip(kw) }}
               </span>
             </div>
             <div class="hot-meta">
@@ -230,16 +230,16 @@
             <p :class="['post-item', `item-${getEraClass(post.eraName)}`]">物件：{{ safeDisplayItemName(post.itemName) }}</p>
             <div class="post-summary-structured" v-if="post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
               <span class="summary-chip summary-source" v-if="post.itemSource">
-                <span class="chip-icon">📦</span>{{ post.itemSource }}
+                <span class="chip-icon">📦</span>{{ truncateForChip(post.itemSource) }}
               </span>
               <span class="summary-chip summary-scene" v-if="post.usageScene">
-                <span class="chip-icon">📍</span>{{ post.usageScene }}
+                <span class="chip-icon">📍</span>{{ truncateForChip(post.usageScene) }}
               </span>
               <span class="summary-chip summary-emotion" v-for="kw in (post.emotionKeywords || []).slice(0, 3)" :key="kw">
-                <span class="chip-icon">💭</span>{{ kw }}
+                <span class="chip-icon">💭</span>{{ truncateForChip(kw) }}
               </span>
             </div>
-            <p class="post-excerpt" v-else>{{ post.storySummary || post.content }}</p>
+            <p class="post-excerpt">{{ buildCardSummary(post) }}</p>
             <div class="post-tags">
               <span :class="['tag', 'tag-cat', getCategoryClass(post.categoryName)]" :style="getCategoryStyleVars(post.categoryName)">
                 <CategoryIcon :category="post.categoryName" size="xs" />
@@ -287,7 +287,7 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { categoriesAPI, erasAPI, postsAPI } from '../api'
-import { displayItemName } from '../utils/textCleaner'
+import { displayItemName, buildCardSummary, truncateForChip } from '../utils/textCleaner'
 import { 
   detectImageOrientationFromUrl, 
   detectImageOrientation,
