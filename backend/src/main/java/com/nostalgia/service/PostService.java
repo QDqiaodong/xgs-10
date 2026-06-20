@@ -41,23 +41,57 @@ public class PostService {
 
     private final String uploadPath = "/app/uploads";
 
-    public Page<Post> getPosts(Long categoryId, Long eraId, int page, int size) {
+    public Page<Post> getPosts(Long categoryId, Long eraId, String preservationStatus, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> posts;
 
-        if (categoryId != null && eraId != null) {
+        String normalizedStatus = normalizePreservationStatus(preservationStatus);
+
+        boolean hasCategory = categoryId != null;
+        boolean hasEra = eraId != null;
+        boolean hasStatus = normalizedStatus != null;
+
+        if (hasCategory && hasEra && hasStatus) {
+            posts = postRepository.findByCategoryIdAndEraIdAndPreservationStatusOrderByCreatedAtDesc(
+                    categoryId, eraId, normalizedStatus, pageable);
+        } else if (hasCategory && hasEra) {
             posts = postRepository.findByCategoryIdAndEraIdOrderByCreatedAtDesc(categoryId, eraId, pageable);
-        } else if (categoryId != null) {
+        } else if (hasCategory && hasStatus) {
+            posts = postRepository.findByCategoryIdAndPreservationStatusOrderByCreatedAtDesc(
+                    categoryId, normalizedStatus, pageable);
+        } else if (hasEra && hasStatus) {
+            posts = postRepository.findByEraIdAndPreservationStatusOrderByCreatedAtDesc(
+                    eraId, normalizedStatus, pageable);
+        } else if (hasCategory) {
             posts = postRepository.findByCategoryIdOrderByCreatedAtDesc(categoryId, pageable);
-        } else if (eraId != null) {
+        } else if (hasEra) {
             posts = postRepository.findByEraIdOrderByCreatedAtDesc(eraId, pageable);
+        } else if (hasStatus) {
+            posts = postRepository.findByPreservationStatusOrderByCreatedAtDesc(normalizedStatus, pageable);
         } else {
             posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
         }
 
         posts.forEach(this::populateCategoryAndEraNames);
         posts.forEach(this::normalizeImages);
+        posts.forEach(this::normalizePreservationStatus);
         return posts;
+    }
+
+    private String normalizePreservationStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        return com.nostalgia.entity.PreservationStatus.fromString(status).getLabel();
+    }
+
+    private void normalizePreservationStatus(Post post) {
+        if (post.getPreservationStatus() == null || post.getPreservationStatus().isBlank()) {
+            post.setPreservationStatus(com.nostalgia.entity.PreservationStatus.UNKNOWN.getLabel());
+        } else {
+            post.setPreservationStatus(
+                    com.nostalgia.entity.PreservationStatus.fromString(post.getPreservationStatus()).getLabel());
+        }
     }
 
     @Cacheable(value = "hotPosts", key = "'top10'")

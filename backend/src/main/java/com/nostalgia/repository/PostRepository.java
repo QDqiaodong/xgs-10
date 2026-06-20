@@ -22,6 +22,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     Page<Post> findByCategoryIdAndEraIdOrderByCreatedAtDesc(Long categoryId, Long eraId, Pageable pageable);
 
+    Page<Post> findByPreservationStatusOrderByCreatedAtDesc(String preservationStatus, Pageable pageable);
+
+    Page<Post> findByCategoryIdAndPreservationStatusOrderByCreatedAtDesc(Long categoryId, String preservationStatus, Pageable pageable);
+
+    Page<Post> findByEraIdAndPreservationStatusOrderByCreatedAtDesc(Long eraId, String preservationStatus, Pageable pageable);
+
+    Page<Post> findByCategoryIdAndEraIdAndPreservationStatusOrderByCreatedAtDesc(Long categoryId, Long eraId, String preservationStatus, Pageable pageable);
+
     List<Post> findTop10ByOrderByViewCountDesc();
 
     @Query("SELECT COUNT(p) FROM Post p WHERE p.eraId = :eraId")
@@ -35,6 +43,30 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT p FROM Post p WHERE p.categoryId = :categoryId ORDER BY p.viewCount DESC, p.createdAt DESC")
     List<Post> findTopByCategoryIdOrderByViewCountDesc(@Param("categoryId") Long categoryId, Pageable pageable);
+
+    @Query("SELECT COUNT(p) FROM Post p WHERE p.categoryId = :categoryId AND p.eraId = :eraId")
+    long countByCategoryIdAndEraId(@Param("categoryId") Long categoryId, @Param("eraId") Long eraId);
+
+    @Query("SELECT COUNT(p) FROM Post p WHERE p.preservationStatus = :preservationStatus")
+    long countByPreservationStatus(@Param("preservationStatus") String preservationStatus);
+
+    @Query("SELECT COUNT(p) FROM Post p WHERE p.categoryId = :categoryId AND p.preservationStatus = :preservationStatus")
+    long countByCategoryIdAndPreservationStatus(@Param("categoryId") Long categoryId, @Param("preservationStatus") String preservationStatus);
+
+    @Query("SELECT COUNT(p) FROM Post p WHERE p.eraId = :eraId AND p.preservationStatus = :preservationStatus")
+    long countByEraIdAndPreservationStatus(@Param("eraId") Long eraId, @Param("preservationStatus") String preservationStatus);
+
+    @Query("SELECT COUNT(p) FROM Post p WHERE p.categoryId = :categoryId AND p.eraId = :eraId AND p.preservationStatus = :preservationStatus")
+    long countByCategoryIdAndEraIdAndPreservationStatus(@Param("categoryId") Long categoryId, @Param("eraId") Long eraId, @Param("preservationStatus") String preservationStatus);
+
+    @Query("SELECT p.preservationStatus, COUNT(p) FROM Post p GROUP BY p.preservationStatus")
+    List<Object[]> countByPreservationStatusGrouped();
+
+    @Query("SELECT p.categoryId, p.preservationStatus, COUNT(p) FROM Post p GROUP BY p.categoryId, p.preservationStatus")
+    List<Object[]> countByCategoryAndPreservationStatusGrouped();
+
+    @Query("SELECT p.eraId, p.preservationStatus, COUNT(p) FROM Post p GROUP BY p.eraId, p.preservationStatus")
+    List<Object[]> countByEraAndPreservationStatusGrouped();
 
     @Modifying
     @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")

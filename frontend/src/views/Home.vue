@@ -161,6 +161,22 @@
           清除筛选
         </button>
       </div>
+      <div class="filter-group">
+        <span class="filter-label">保存状态：</span>
+        <button
+          v-for="status in preservationStatuses"
+          :key="status.label"
+          :class="['filter-btn', 'filter-status', { active: selectedPreservationStatus === status.label }]"
+          :style="getStatusStyleVars(status)"
+          @click="togglePreservationStatus(status.label)"
+        >
+          <span class="status-icon">{{ status.icon }}</span>
+          {{ status.label }}
+        </button>
+        <button v-if="selectedPreservationStatus" class="filter-btn clear" @click="clearPreservationStatusFilter">
+          清除筛选
+        </button>
+      </div>
     </section>
 
     <section class="hot-section" v-if="hotPosts.length > 0">
@@ -246,6 +262,13 @@
                 {{ post.categoryName }}
               </span>
               <span :class="['tag', `tag-era-${getEraClass(post.eraName)}`]">{{ post.eraName }}</span>
+              <span
+                v-if="post.preservationStatus"
+                class="tag tag-preservation"
+                :style="getPreservationTagStyle(post.preservationStatus)"
+              >
+                {{ getStatusIcon(post.preservationStatus) }} {{ post.preservationStatus }}
+              </span>
             </div>
             <div :class="['post-footer', `footer-${getEraClass(post.eraName)}`]">
               <span class="post-author">{{ post.authorName }}</span>
@@ -301,6 +324,7 @@ import {
 import { getCategoryClass, getCategoryStyleVars, getCategoryDescription } from '../icons/categoryUtils'
 import { getCategoryConfig } from '../icons/categories'
 import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
+import { getStatusConfig, getAllStatuses, normalizePreservationStatus } from '../utils/preservationStatus'
 
 const router = useRouter()
 
@@ -310,8 +334,10 @@ const eras = ref([])
 const eraTimeline = ref([])
 const posts = ref([])
 const hotPosts = ref([])
+const preservationStatuses = ref([])
 const selectedCategory = ref(null)
 const selectedEra = ref(null)
+const selectedPreservationStatus = ref(null)
 const currentPage = ref(0)
 const totalPages = ref(1)
 const pageSize = 10
@@ -319,6 +345,27 @@ const imageOrientations = ref({})
 
 const getCategoryKey = (categoryName) => {
   return getCategoryConfig(categoryName).key
+}
+
+const getStatusStyleVars = (status) => {
+  return {
+    '--status-color': status.color,
+    '--status-bg': status.bgGradient,
+    '--status-border': status.borderColor
+  }
+}
+
+const getStatusIcon = (statusLabel) => {
+  return getStatusConfig(statusLabel).icon
+}
+
+const getPreservationTagStyle = (statusLabel) => {
+  const config = getStatusConfig(statusLabel)
+  return {
+    background: config.bgGradient,
+    color: config.color,
+    border: `1px solid ${config.borderColor}`
+  }
 }
 
 const detectPostImagesOrientation = async (postsList) => {
@@ -451,6 +498,7 @@ const loadPosts = async () => {
     const res = await postsAPI.getList({
       categoryId: selectedCategory.value,
       eraId: selectedEra.value,
+      preservationStatus: selectedPreservationStatus.value,
       page: currentPage.value,
       size: pageSize
     })
@@ -459,6 +507,23 @@ const loadPosts = async () => {
     nextTick(() => detectPostImagesOrientation(posts.value))
   } catch (e) {
     console.error('加载帖子失败', e)
+  }
+}
+
+const loadPreservationStatuses = async () => {
+  try {
+    const res = await postsAPI.getPreservationStatuses()
+    if (res.data && res.data.length > 0) {
+      preservationStatuses.value = res.data.map(item => ({
+        ...item,
+        ...getStatusConfig(item.label)
+      }))
+    } else {
+      preservationStatuses.value = getAllStatuses()
+    }
+  } catch (e) {
+    console.error('加载保存状态失败，使用本地配置', e)
+    preservationStatuses.value = getAllStatuses()
   }
 }
 
@@ -498,6 +563,18 @@ const clearEraFilter = () => {
   loadPosts()
 }
 
+const togglePreservationStatus = (status) => {
+  selectedPreservationStatus.value = selectedPreservationStatus.value === status ? null : status
+  currentPage.value = 0
+  loadPosts()
+}
+
+const clearPreservationStatusFilter = () => {
+  selectedPreservationStatus.value = null
+  currentPage.value = 0
+  loadPosts()
+}
+
 const changePage = (page) => {
   if (page >= 0 && page < totalPages.value) {
     currentPage.value = page
@@ -511,6 +588,7 @@ onMounted(() => {
   loadCategoryShowcase()
   loadEras()
   loadEraTimeline()
+  loadPreservationStatuses()
   loadPosts()
   loadHotPosts()
 })
@@ -954,6 +1032,32 @@ onMounted(() => {
   background: #fff;
   border: 1px dashed #d4a574;
   color: #d4a574;
+}
+
+.filter-status {
+  background: var(--status-bg);
+  color: var(--status-color);
+  border: 2px solid var(--status-border);
+  font-weight: 600;
+}
+
+.filter-status:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.filter-status.active {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+.status-icon {
+  font-size: 14px;
+}
+
+.tag-preservation {
+  font-weight: 600;
+  font-size: 11px;
 }
 
 .cat-icon {

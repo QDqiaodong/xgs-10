@@ -2,8 +2,10 @@ package com.nostalgia.service;
 
 import com.nostalgia.dto.CategoryShowcaseDTO;
 import com.nostalgia.entity.Category;
+import com.nostalgia.entity.Era;
 import com.nostalgia.entity.Post;
 import com.nostalgia.repository.CategoryRepository;
+import com.nostalgia.repository.EraRepository;
 import com.nostalgia.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -11,7 +13,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -20,6 +24,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final PostRepository postRepository;
+    private final EraRepository eraRepository;
     private final PostService postService;
 
     @Cacheable(value = "categories", key = "'all'")
@@ -34,6 +39,8 @@ public class CategoryService {
     @Cacheable(value = "categories", key = "'showcase'")
     public List<CategoryShowcaseDTO> getCategoryShowcase() {
         List<Category> categories = categoryRepository.findAllByOrderBySortOrderAsc();
+        List<com.nostalgia.entity.Era> eras = eraRepository.findAllByOrderBySortOrderAsc();
+        List<com.nostalgia.entity.PreservationStatus> statuses = com.nostalgia.entity.PreservationStatus.getAllStatuses();
         List<CategoryShowcaseDTO> showcase = new ArrayList<>();
 
         for (Category category : categories) {
@@ -50,6 +57,19 @@ public class CategoryService {
                 category.getId(), PageRequest.of(0, 3));
             topPosts.forEach(postService::populateCategoryAndEraNamesExternal);
             dto.setRepresentativePosts(topPosts);
+
+            Map<String, Long> byEra = new LinkedHashMap<>();
+            for (com.nostalgia.entity.Era era : eras) {
+                byEra.put(era.getName(), postRepository.countByCategoryIdAndEraId(category.getId(), era.getId()));
+            }
+            dto.setByEra(byEra);
+
+            Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
+            for (com.nostalgia.entity.PreservationStatus status : statuses) {
+                byPreservationStatus.put(status.getLabel(),
+                        postRepository.countByCategoryIdAndPreservationStatus(category.getId(), status.getLabel()));
+            }
+            dto.setByPreservationStatus(byPreservationStatus);
 
             showcase.add(dto);
         }

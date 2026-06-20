@@ -30,6 +30,38 @@
             <div class="stat-label">物品种类</div>
           </div>
         </div>
+        <div class="stat-item" v-if="stats.totalPreservationStatuses">
+          <div class="stat-icon">🔧</div>
+          <div class="stat-info">
+            <div class="stat-number">{{ stats.totalPreservationStatuses }}</div>
+            <div class="stat-label">保存状态</div>
+          </div>
+        </div>
+      </div>
+      <div class="preservation-stats" v-if="stats.preservationStatusStats && stats.preservationStatusStats.length > 0">
+        <h4 class="sub-stat-title">保存状态分布</h4>
+        <div class="preservation-bars">
+          <div 
+            v-for="statusStat in stats.preservationStatusStats" 
+            :key="statusStat.label"
+            class="preservation-bar-item"
+          >
+            <div class="bar-label">
+              <span class="bar-icon">{{ statusStat.icon }}</span>
+              <span class="bar-name">{{ statusStat.label }}</span>
+              <span class="bar-count">{{ statusStat.totalCount }} 件</span>
+            </div>
+            <div class="bar-track">
+              <div 
+                class="bar-fill" 
+                :style="{ 
+                  width: getPercentage(statusStat.totalCount, stats.totalPosts) + '%',
+                  background: statusStat.color 
+                }"
+              ></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -69,6 +101,25 @@
         >
           <CategoryIcon :category="cat.name" size="sm" mode="emoji" />
           {{ cat.name }}
+        </button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">保存状态：</span>
+        <button
+          :class="['filter-btn', 'filter-status', { active: !selectedPreservationStatus }]"
+          @click="selectedPreservationStatus = null"
+        >
+          全部状态
+        </button>
+        <button
+          v-for="status in preservationStatuses"
+          :key="status.label"
+          :class="['filter-btn', 'filter-status', { active: selectedPreservationStatus === status.label }]"
+          :style="getStatusStyleVars(status)"
+          @click="selectedPreservationStatus = status.label"
+        >
+          <span class="status-icon">{{ status.icon }}</span>
+          {{ status.label }}
         </button>
       </div>
     </section>
@@ -135,8 +186,11 @@
                     :alt="item.itemName"
                     class="item-image"
                   />
-                  <div :class="['preservation-badge', getPreservationClass(item.preservationStatus)]">
-                    {{ item.preservationStatus || '待评估' }}
+                  <div 
+                    class="preservation-badge"
+                    :style="getPreservationBadgeStyle(item.preservationStatus)"
+                  >
+                    {{ getStatusIcon(item.preservationStatus) }} {{ item.preservationStatus || '待评估' }}
                   </div>
                 </div>
                 <div class="item-content">
@@ -246,14 +300,18 @@ import { displayItemName, buildArchiveSummary, truncateForChip } from '../utils/
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
 import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
 import { getImageUrl, getMainImage } from '../utils/imageLayout'
+import { getStatusConfig, getAllStatuses } from '../utils/preservationStatus'
+import { postsAPI } from '../api'
 
 const eras = ref([])
 const categories = ref([])
+const preservationStatuses = ref([])
 const posts = ref([])
 const groupedData = ref([])
 const stats = ref(null)
 const selectedEra = ref(null)
 const selectedCategory = ref(null)
+const selectedPreservationStatus = ref(null)
 const currentPage = ref(0)
 const totalPages = ref(1)
 const pageSize = 20
@@ -294,14 +352,47 @@ const getItemImgUrl = (images) => {
   return getImageUrl(images[0])
 }
 
-const getPreservationClass = (status) => {
-  if (!status) return 'preservation-default'
-  const s = status.toLowerCase()
-  if (s.includes('完好') || s.includes('完美') || s.includes('新')) return 'preservation-excellent'
-  if (s.includes('正常') || s.includes('良好') || s.includes('功能')) return 'preservation-good'
-  if (s.includes('锈') || s.includes('磨损') || s.includes('旧')) return 'preservation-worn'
-  if (s.includes('破损') || s.includes('坏') || s.includes('故障')) return 'preservation-damaged'
-  return 'preservation-default'
+const getStatusStyleVars = (status) => {
+  return {
+    '--status-color': status.color,
+    '--status-bg': status.bgGradient,
+    '--status-border': status.borderColor
+  }
+}
+
+const getStatusIcon = (statusLabel) => {
+  return getStatusConfig(statusLabel).icon
+}
+
+const getPreservationBadgeStyle = (statusLabel) => {
+  const config = getStatusConfig(statusLabel)
+  return {
+    background: config.color,
+    color: '#fff',
+    border: `1px solid ${config.borderColor}`
+  }
+}
+
+const loadPreservationStatuses = async () => {
+  try {
+    const res = await postsAPI.getPreservationStatuses()
+    if (res.data && res.data.length > 0) {
+      preservationStatuses.value = res.data.map(item => ({
+        ...item,
+        ...getStatusConfig(item.label)
+      }))
+    } else {
+      preservationStatuses.value = getAllStatuses()
+    }
+  } catch (e) {
+    console.error('加载保存状态失败，使用本地配置', e)
+    preservationStatuses.value = getAllStatuses()
+  }
+}
+
+const getPercentage = (count, total) => {
+  if (!total || total === 0) return 0
+  return Math.round((count / total) * 100)
 }
 
 const loadStats = async () => {
@@ -331,7 +422,8 @@ const loadFilters = async () => {
 const loadGroupedData = async () => {
   try {
     const res = await archivesAPI.getGrouped({
-      categoryId: selectedCategory.value
+      categoryId: selectedCategory.value,
+      preservationStatus: selectedPreservationStatus.value
     })
     let groups = res.data || []
     groups = groups.map(group => ({
@@ -354,6 +446,7 @@ const loadListData = async () => {
     const res = await archivesAPI.getList({
       categoryId: selectedCategory.value,
       eraId: selectedEra.value,
+      preservationStatus: selectedPreservationStatus.value,
       page: currentPage.value,
       size: pageSize
     })
@@ -372,7 +465,7 @@ const changePage = (page) => {
   }
 }
 
-watch([selectedEra, selectedCategory], () => {
+watch([selectedEra, selectedCategory, selectedPreservationStatus], () => {
   currentPage.value = 0
   if (viewMode.value === 'grouped') {
     loadGroupedData()
@@ -393,6 +486,7 @@ watch(viewMode, () => {
 onMounted(() => {
   loadStats()
   loadFilters()
+  loadPreservationStatuses()
   loadGroupedData()
   loadListData()
 })
@@ -458,6 +552,66 @@ onMounted(() => {
 .stat-label {
   font-size: 14px;
   color: #8b6914;
+}
+
+.preservation-stats {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px dashed #e8d5b8;
+}
+
+.sub-stat-title {
+  font-size: 16px;
+  color: #5d4e37;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.preservation-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preservation-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bar-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.bar-icon {
+  font-size: 14px;
+}
+
+.bar-name {
+  color: #5d4e37;
+  font-weight: 500;
+}
+
+.bar-count {
+  margin-left: auto;
+  color: #8b6914;
+  font-weight: 600;
+}
+
+.bar-track {
+  height: 8px;
+  background: #f5e6d3;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
 }
 
 .filter-section {
@@ -548,6 +702,38 @@ onMounted(() => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+}
+
+.filter-status {
+  background: var(--status-bg);
+  color: var(--status-color);
+  border: 2px solid var(--status-border);
+  font-weight: 600;
+}
+
+.filter-status:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.filter-status.active {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+.status-icon {
+  font-size: 14px;
+}
+
+.preservation-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
 }
 
 .era-section {
@@ -707,31 +893,6 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 500;
   backdrop-filter: blur(8px);
-}
-
-.preservation-excellent {
-  background: linear-gradient(135deg, rgba(82, 196, 26, 0.95) 0%, rgba(56, 158, 13, 0.95) 100%);
-  color: #fff;
-}
-
-.preservation-good {
-  background: linear-gradient(135deg, rgba(24, 144, 255, 0.95) 0%, rgba(9, 109, 217, 0.95) 100%);
-  color: #fff;
-}
-
-.preservation-worn {
-  background: linear-gradient(135deg, rgba(250, 173, 20, 0.95) 0%, rgba(212, 136, 6, 0.95) 100%);
-  color: #fff;
-}
-
-.preservation-damaged {
-  background: linear-gradient(135deg, rgba(255, 77, 79, 0.95) 0%, rgba(207, 32, 40, 0.95) 100%);
-  color: #fff;
-}
-
-.preservation-default {
-  background: rgba(120, 120, 120, 0.9);
-  color: #fff;
 }
 
 .item-content {

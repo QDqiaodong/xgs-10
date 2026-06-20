@@ -4,6 +4,7 @@ import com.nostalgia.entity.Post;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class EraTimelineDTO {
@@ -17,4 +18,6 @@ public class EraTimelineDTO {
     private String representativeCategories;
     private Integer postCount;
     private List<Post> representativePosts;
+    private Map<String, Long> byCategory;
+    private Map<String, Long> byPreservationStatus;
 }

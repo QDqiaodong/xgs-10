@@ -23,6 +23,13 @@
               {{ post.categoryName || '未分类' }}
             </span>
             <span class="tag">{{ post.eraName || '未知年代' }}</span>
+            <span
+              v-if="post.preservationStatus"
+              class="tag tag-preservation"
+              :style="getPreservationTagStyle(post.preservationStatus)"
+            >
+              {{ getStatusIcon(post.preservationStatus) }} {{ post.preservationStatus }}
+            </span>
           </div>
           <div class="post-footer">
             <span class="post-author">{{ post.authorName }}</span>
@@ -60,6 +67,7 @@ import {
 } from '../utils/imageLayout'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
 import { getEraClass, normalizeEraName, sortErasDefault } from '../utils/eraUtils'
+import { getStatusConfig } from '../utils/preservationStatus'
 
 const favorites = ref([])
 const userSession = getSessionId()
@@ -106,6 +114,19 @@ const detectImagesOrientation = async (postsList) => {
 }
 
 const safeDisplayItemName = (name) => displayItemName(name)
+
+const getStatusIcon = (statusLabel) => {
+  return getStatusConfig(statusLabel).icon
+}
+
+const getPreservationTagStyle = (statusLabel) => {
+  const config = getStatusConfig(statusLabel)
+  return {
+    background: config.bgGradient,
+    color: config.color,
+    border: `1px solid ${config.borderColor}`
+  }
+}
 
 const loadFavorites = async () => {
   try {
@@ -216,6 +237,11 @@ onMounted(() => {
 
 .post-tags {
   margin-bottom: 16px;
+}
+
+.tag-preservation {
+  font-weight: 600;
+  font-size: 11px;
 }
 
 .post-footer {

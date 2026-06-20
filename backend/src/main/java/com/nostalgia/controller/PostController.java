@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nostalgia.entity.Post;
+import com.nostalgia.entity.PreservationStatus;
 import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.service.PostService;
 import com.nostalgia.util.TextCleaner;
@@ -30,9 +31,10 @@ public class PostController {
     public ResponseEntity<Page<Post>> getPosts(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long eraId,
+            @RequestParam(required = false) String preservationStatus,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(postService.getPosts(categoryId, eraId, page, size));
+        return ResponseEntity.ok(postService.getPosts(categoryId, eraId, preservationStatus, page, size));
     }
 
     @GetMapping("/hot")
@@ -93,6 +95,11 @@ public class PostController {
         }
 
         return ResponseEntity.ok(postService.createPost(post, images, events));
+    }
+
+    @GetMapping("/preservation-statuses")
+    public ResponseEntity<List<PreservationStatus>> getPreservationStatuses() {
+        return ResponseEntity.ok(PreservationStatus.getAllStatuses());
     }
 
     @PostMapping("/regenerate-summaries")
