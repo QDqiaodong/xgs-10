@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS posts (
     preservation_status VARCHAR(50),
     usage_scene VARCHAR(100),
     story_summary VARCHAR(500),
+    item_source VARCHAR(200),
+    emotion_keywords JSON,
     images JSON,
     category_id BIGINT NOT NULL,
     era_id BIGINT NOT NULL,
@@ -52,6 +54,7 @@ CREATE TABLE IF NOT EXISTS posts (
     INDEX idx_era (era_id),
     INDEX idx_created_at (created_at),
     INDEX idx_view_count (view_count),
+    INDEX idx_preservation_status (preservation_status),
     INDEX idx_category_era (category_id, era_id),
     FULLTEXT INDEX ft_content (title, item_name, content, story, memory, era_background, current_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -108,10 +111,10 @@ INSERT INTO eras (name, year_start, year_end, description, icon, color_scheme, r
 ('90年代', 1990, 1999, '市场化浪潮席卷全国，港台文化成为主流。BP机、大哥大、CD随身听、小霸王学习机是那个时代的科技象征。', '⚡', '#ff6f00:#ffab40:#fff8e1', '通讯工具,影音设备,玩具玩偶', 4),
 ('00年代', 2000, 2009, '互联网时代的开启，MP3、数码相机、智能手机逐渐普及。超级女声、周杰伦、QQ聊天记录着青春的印记。', '◈', '#00acc1:#80deea:#e0f7fa', '通讯工具,影音设备,日常用品', 5);
 
-INSERT INTO posts (title, item_name, content, story, memory, era_background, current_status, preservation_status, usage_scene, story_summary, images, category_id, era_id, view_count, author_name) VALUES
-('老黑白电视机的回忆', '黑白电视机', '这是一台80年代的黑白电视机，还记得小时候全村人围在一起看西游记的场景吗？', '这台电视是爸爸当年攒了三个月工资买的，当时是村里第一台电视。', '每到傍晚，院子里就坐满了人，大家自带小板凳，那种热闹的感觉再也找不到了。', '80年代中国电视机开始进入普通家庭，但对于大多数农村家庭来说仍是奢侈品。一台14寸黑白电视售价约400元，相当于普通工人三四个月的工资。当时电视台节目有限，每晚黄金时段的电视剧是全村人最重要的娱乐活动。', '2005年搬家时送给了老家亲戚，据说至今仍能正常开机收看，偶尔还会被拿出来播放老录像带，成为家族怀旧聚会的焦点。', '完好保存', '家庭客厅 / 全村集体观看', '1985年父亲花三个月工资购入的全村第一台黑白电视，承载着全村人围看西游记的集体记忆，至今仍能正常使用。', '[{"url":"https://picsum.photos/seed/tv1/600/400","width":600,"height":400,"isMain":true,"sortOrder":0},{"url":"https://picsum.photos/seed/tv2/600/400","width":600,"height":400,"isMain":false,"sortOrder":1}]', 2, 3, 128, '老张'),
-('童年的铁皮青蛙', '铁皮青蛙', '上弦的铁皮青蛙，一拧就能跳老远，是那个年代最经典的玩具之一。', '记得是过生日时爷爷给买的，当时爱不释手，睡觉都要放在枕头边。', '现在看到它，仿佛又回到了那个无忧无虑的童年时光。', '80年代中国制造的铁皮玩具风靡全国，采用镀锡铁皮冲压工艺，经久耐用。铁皮青蛙、铁皮坦克、铁皮小汽车是那个年代孩子最渴望的礼物，价格约一两元钱，相当于家长大半天的工资。', '如今作为珍贵收藏品摆放在家中书架的玻璃柜中，每次整理旧物看到它，都会拿出来给孩子演示上弦跳跃，讲述那个简单快乐的童年。', '略有锈迹', '儿童玩耍 / 书桌摆设', '1988年六一儿童节爷爷赠送的生日礼物，伴随整个童年，如今作为珍贵收藏摆放在书架上。', '[{"url":"https://picsum.photos/seed/frog1/600/400","width":600,"height":400,"isMain":true,"sortOrder":0}]', 4, 3, 256, '李阿姨'),
-('老款双卡录音机', '双卡录音机', '当年的奢侈品，能拥有一台双卡录音机是多么让人羡慕的事情。', '这台录音机是哥哥从南方带回来的，当时可是稀罕物。', '记得用它录了好多磁带，邓丽君、谭咏麟的歌都是从这里听到的。', '90年代初双卡录音机是年轻人追求时尚的标志，支持磁带对录功能，可以翻录朋友的音乐磁带。一盒正版磁带约6-10元，对于学生来说价格不菲，因此互相磁带转录成为当时流行的音乐分享方式。', '2018年送给了对老物件感兴趣的侄儿，侄儿将其修复后放在自己的复古风格咖啡馆里，偶尔还会播放老磁带，引来很多顾客的好奇与赞叹。', '功能正常', '卧室听歌 / 校园晚会伴奏', '1992年哥哥从深圳带回的双卡录音机，录满了一抽屉磁带，陪伴度过无数个放学后的音乐时光。', '[{"url":"https://picsum.photos/seed/radio1/600/400","width":600,"height":400,"isMain":true,"sortOrder":0},{"url":"https://picsum.photos/seed/radio2/800/600","width":800,"height":600,"isMain":false,"sortOrder":1}]', 2, 4, 189, '王叔');
+INSERT INTO posts (title, item_name, content, story, memory, era_background, current_status, preservation_status, usage_scene, story_summary, item_source, emotion_keywords, images, category_id, era_id, view_count, author_name) VALUES
+('老黑白电视机的回忆', '黑白电视机', '这是一台80年代的黑白电视机，还记得小时候全村人围在一起看西游记的场景吗？', '这台电视是爸爸当年攒了三个月工资买的，当时是村里第一台电视。', '每到傍晚，院子里就坐满了人，大家自带小板凳，那种热闹的感觉再也找不到了。', '80年代中国电视机开始进入普通家庭，但对于大多数农村家庭来说仍是奢侈品。一台14寸黑白电视售价约400元，相当于普通工人三四个月的工资。当时电视台节目有限，每晚黄金时段的电视剧是全村人最重要的娱乐活动。', '2005年搬家时送给了老家亲戚，据说至今仍能正常开机收看，偶尔还会被拿出来播放老录像带，成为家族怀旧聚会的焦点。', '完好保存', '家庭客厅 / 全村集体观看', '1985年父亲花三个月工资购入的全村第一台黑白电视，承载着全村人围看西游记的集体记忆，至今仍能正常使用。', '父亲在县城供销社购买', '["怀念","温暖","怀旧"]', '[{"url":"https://picsum.photos/seed/tv1/600/400","width":600,"height":400,"isMain":true,"sortOrder":0},{"url":"https://picsum.photos/seed/tv2/600/400","width":600,"height":400,"isMain":false,"sortOrder":1}]', 2, 3, 128, '老张'),
+('童年的铁皮青蛙', '铁皮青蛙', '上弦的铁皮青蛙，一拧就能跳老远，是那个年代最经典的玩具之一。', '记得是过生日时爷爷给买的，当时爱不释手，睡觉都要放在枕头边。', '现在看到它，仿佛又回到了那个无忧无虑的童年时光。', '80年代中国制造的铁皮玩具风靡全国，采用镀锡铁皮冲压工艺，经久耐用。铁皮青蛙、铁皮坦克、铁皮小汽车是那个年代孩子最渴望的礼物，价格约一两元钱，相当于家长大半天的工资。', '如今作为珍贵收藏品摆放在家中书架的玻璃柜中，每次整理旧物看到它，都会拿出来给孩子演示上弦跳跃，讲述那个简单快乐的童年。', '略有锈迹', '儿童玩耍 / 书桌摆设', '1988年六一儿童节爷爷赠送的生日礼物，伴随整个童年，如今作为珍贵收藏摆放在书架上。', '爷爷在县城百货大楼赠送', '["珍惜","怀念","新奇"]', '[{"url":"https://picsum.photos/seed/frog1/600/400","width":600,"height":400,"isMain":true,"sortOrder":0}]', 4, 3, 256, '李阿姨'),
+('老款双卡录音机', '双卡录音机', '当年的奢侈品，能拥有一台双卡录音机是多么让人羡慕的事情。', '这台录音机是哥哥从南方带回来的，当时可是稀罕物。', '记得用它录了好多磁带，邓丽君、谭咏麟的歌都是从这里听到的。', '90年代初双卡录音机是年轻人追求时尚的标志，支持磁带对录功能，可以翻录朋友的音乐磁带。一盒正版磁带约6-10元，对于学生来说价格不菲，因此互相磁带转录成为当时流行的音乐分享方式。', '2018年送给了对老物件感兴趣的侄儿，侄儿将其修复后放在自己的复古风格咖啡馆里，偶尔还会播放老磁带，引来很多顾客的好奇与赞叹。', '功能正常', '卧室听歌 / 校园晚会伴奏', '1992年哥哥从深圳带回的双卡录音机，录满了一抽屉磁带，陪伴度过无数个放学后的音乐时光。', '哥哥从深圳打工带回', '["怀念","温暖","自豪"]', '[{"url":"https://picsum.photos/seed/radio1/600/400","width":600,"height":400,"isMain":true,"sortOrder":0},{"url":"https://picsum.photos/seed/radio2/800/600","width":800,"height":600,"isMain":false,"sortOrder":1}]', 2, 4, 189, '王叔');
 
 INSERT INTO timeline_events (post_id, event_type, event_date, title, description, location, sort_order) VALUES
 (1, 'ACQUISITION', '1985-03-15', '获得电视机', '爸爸攒了三个月工资，在县城供销社花了420元买下了这台14寸黑白电视机。', '县城供销社', 0),

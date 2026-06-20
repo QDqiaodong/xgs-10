@@ -84,7 +84,7 @@ public class EraService {
         Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
         for (PreservationStatus status : statuses) {
             byPreservationStatus.put(status.getLabel(),
-                    postRepository.countByEraIdAndPreservationStatus(era.getId(), status.getLabel()));
+                    postService.countBySpecification(null, era.getId(), status.getLabel()));
         }
         dto.setByPreservationStatus(byPreservationStatus);
 

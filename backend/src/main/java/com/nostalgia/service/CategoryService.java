@@ -67,7 +67,7 @@ public class CategoryService {
             Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
             for (com.nostalgia.entity.PreservationStatus status : statuses) {
                 byPreservationStatus.put(status.getLabel(),
-                        postRepository.countByCategoryIdAndPreservationStatus(category.getId(), status.getLabel()));
+                        postService.countBySpecification(category.getId(), null, status.getLabel()));
             }
             dto.setByPreservationStatus(byPreservationStatus);
 

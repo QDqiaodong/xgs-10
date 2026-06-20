@@ -4,6 +4,7 @@ import com.nostalgia.entity.Category;
 import com.nostalgia.entity.Era;
 import com.nostalgia.entity.Post;
 import com.nostalgia.entity.PostImage;
+import com.nostalgia.entity.PreservationStatus;
 import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.repository.CategoryRepository;
 import com.nostalgia.repository.EraRepository;
@@ -12,12 +13,18 @@ import com.nostalgia.repository.TimelineEventRepository;
 import com.nostalgia.util.ImageInfo;
 import com.nostalgia.util.StorySummaryExtractor;
 import com.nostalgia.util.TextCleaner;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,35 +49,11 @@ public class PostService {
     private final String uploadPath = "/app/uploads";
 
     public Page<Post> getPosts(Long categoryId, Long eraId, String preservationStatus, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Post> posts;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        String normalizedStatus = normalizePreservationStatus(preservationStatus);
+        Specification<Post> spec = buildSpecification(categoryId, eraId, preservationStatus);
 
-        boolean hasCategory = categoryId != null;
-        boolean hasEra = eraId != null;
-        boolean hasStatus = normalizedStatus != null;
-
-        if (hasCategory && hasEra && hasStatus) {
-            posts = postRepository.findByCategoryIdAndEraIdAndPreservationStatusOrderByCreatedAtDesc(
-                    categoryId, eraId, normalizedStatus, pageable);
-        } else if (hasCategory && hasEra) {
-            posts = postRepository.findByCategoryIdAndEraIdOrderByCreatedAtDesc(categoryId, eraId, pageable);
-        } else if (hasCategory && hasStatus) {
-            posts = postRepository.findByCategoryIdAndPreservationStatusOrderByCreatedAtDesc(
-                    categoryId, normalizedStatus, pageable);
-        } else if (hasEra && hasStatus) {
-            posts = postRepository.findByEraIdAndPreservationStatusOrderByCreatedAtDesc(
-                    eraId, normalizedStatus, pageable);
-        } else if (hasCategory) {
-            posts = postRepository.findByCategoryIdOrderByCreatedAtDesc(categoryId, pageable);
-        } else if (hasEra) {
-            posts = postRepository.findByEraIdOrderByCreatedAtDesc(eraId, pageable);
-        } else if (hasStatus) {
-            posts = postRepository.findByPreservationStatusOrderByCreatedAtDesc(normalizedStatus, pageable);
-        } else {
-            posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
-        }
+        Page<Post> posts = postRepository.findAll(spec, pageable);
 
         posts.forEach(this::populateCategoryAndEraNames);
         posts.forEach(this::normalizeImages);
@@ -78,19 +61,72 @@ public class PostService {
         return posts;
     }
 
-    private String normalizePreservationStatus(String status) {
-        if (status == null || status.isBlank()) {
-            return null;
+    private Specification<Post> buildSpecification(Long categoryId, Long eraId, String preservationStatus) {
+        return (Root<Post> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (categoryId != null) {
+                predicates.add(cb.equal(root.get("categoryId"), categoryId));
+            }
+
+            if (eraId != null) {
+                predicates.add(cb.equal(root.get("eraId"), eraId));
+            }
+
+            if (preservationStatus != null && !preservationStatus.isBlank()) {
+                PreservationStatus targetStatus = PreservationStatus.fromString(preservationStatus);
+                List<String> keywords = targetStatus.getMatchKeywords();
+
+                if (targetStatus == PreservationStatus.UNKNOWN) {
+                    List<Predicate> unknownPredicates = new ArrayList<>();
+                    unknownPredicates.add(cb.isNull(root.get("preservationStatus")));
+                    unknownPredicates.add(cb.equal(root.get("preservationStatus"), ""));
+
+                    List<Predicate> keywordPredicates = new ArrayList<>();
+                    for (String kw : keywords) {
+                        keywordPredicates.add(cb.like(root.get("preservationStatus"), "%" + kw + "%"));
+                    }
+                    Predicate keywordOr = cb.or(keywordPredicates.toArray(new Predicate[0]));
+
+                    Predicate notMatched = cb.not(buildMatchAnyStatusPredicate(root, cb));
+                    unknownPredicates.add(cb.and(notMatched, cb.isNotNull(root.get("preservationStatus")), cb.notEqual(root.get("preservationStatus"), "")));
+
+                    predicates.add(cb.or(unknownPredicates.toArray(new Predicate[0])));
+                } else {
+                    List<Predicate> statusPredicates = new ArrayList<>();
+                    for (String kw : keywords) {
+                        statusPredicates.add(cb.like(root.get("preservationStatus"), "%" + kw + "%"));
+                    }
+                    predicates.add(cb.or(statusPredicates.toArray(new Predicate[0])));
+                }
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private Predicate buildMatchAnyStatusPredicate(Root<Post> root, CriteriaBuilder cb) {
+        List<Predicate> allMatchPredicates = new ArrayList<>();
+        for (PreservationStatus status : PreservationStatus.values()) {
+            if (status == PreservationStatus.UNKNOWN) continue;
+            for (String kw : status.getMatchKeywords()) {
+                allMatchPredicates.add(cb.like(root.get("preservationStatus"), "%" + kw + "%"));
+            }
         }
-        return com.nostalgia.entity.PreservationStatus.fromString(status).getLabel();
+        return cb.or(allMatchPredicates.toArray(new Predicate[0]));
+    }
+
+    public long countBySpecification(Long categoryId, Long eraId, String preservationStatus) {
+        Specification<Post> spec = buildSpecification(categoryId, eraId, preservationStatus);
+        return postRepository.count(spec);
     }
 
     private void normalizePreservationStatus(Post post) {
         if (post.getPreservationStatus() == null || post.getPreservationStatus().isBlank()) {
-            post.setPreservationStatus(com.nostalgia.entity.PreservationStatus.UNKNOWN.getLabel());
+            post.setPreservationStatus(PreservationStatus.UNKNOWN.getLabel());
         } else {
             post.setPreservationStatus(
-                    com.nostalgia.entity.PreservationStatus.fromString(post.getPreservationStatus()).getLabel());
+                    PreservationStatus.fromString(post.getPreservationStatus()).getLabel());
         }
     }
 
@@ -99,6 +135,7 @@ public class PostService {
         List<Post> posts = postRepository.findTop10ByOrderByViewCountDesc();
         posts.forEach(this::populateCategoryAndEraNames);
         posts.forEach(this::normalizeImages);
+        posts.forEach(this::normalizePreservationStatus);
         return posts;
     }
 
@@ -111,6 +148,7 @@ public class PostService {
         populateCategoryAndEraNames(post);
         populateTimelineEvents(post);
         normalizeImages(post);
+        normalizePreservationStatus(post);
         return post;
     }
 
@@ -150,6 +188,10 @@ public class PostService {
                 postImages.add(postImage);
             }
             post.setImages(postImages);
+        }
+
+        if (post.getPreservationStatus() != null && !post.getPreservationStatus().isBlank()) {
+            post.setPreservationStatus(PreservationStatus.fromString(post.getPreservationStatus()).getLabel());
         }
 
         Post savedPost = postRepository.save(post);
@@ -311,29 +353,7 @@ public class PostService {
     }
 
     public long countPosts(Long categoryId, Long eraId, String preservationStatus) {
-        String normalizedStatus = normalizePreservationStatus(preservationStatus);
-
-        boolean hasCategory = categoryId != null;
-        boolean hasEra = eraId != null;
-        boolean hasStatus = normalizedStatus != null;
-
-        if (hasCategory && hasEra && hasStatus) {
-            return postRepository.countByCategoryIdAndEraIdAndPreservationStatus(categoryId, eraId, normalizedStatus);
-        } else if (hasCategory && hasEra) {
-            return postRepository.countByCategoryIdAndEraId(categoryId, eraId);
-        } else if (hasCategory && hasStatus) {
-            return postRepository.countByCategoryIdAndPreservationStatus(categoryId, normalizedStatus);
-        } else if (hasEra && hasStatus) {
-            return postRepository.countByEraIdAndPreservationStatus(eraId, normalizedStatus);
-        } else if (hasCategory) {
-            return postRepository.countByCategoryId(categoryId);
-        } else if (hasEra) {
-            return postRepository.countByEraId(eraId);
-        } else if (hasStatus) {
-            return postRepository.countByPreservationStatus(normalizedStatus);
-        } else {
-            return postRepository.count();
-        }
+        return countBySpecification(categoryId, eraId, preservationStatus);
     }
 
     public Map<Long, Long> getCountByEraGrouped() {
@@ -360,13 +380,14 @@ public class PostService {
 
     public Map<String, Long> getCountByPreservationStatusGrouped() {
         List<Object[]> results = postRepository.countByPreservationStatusGrouped();
-        Map<String, Long> map = new HashMap<>();
+        Map<String, Long> normalizedMap = new LinkedHashMap<>();
         for (Object[] row : results) {
-            String status = (String) row[0];
+            String rawStatus = (String) row[0];
             Long count = (Long) row[1];
-            map.put(status, count);
+            String normalizedLabel = PreservationStatus.fromString(rawStatus).getLabel();
+            normalizedMap.merge(normalizedLabel, count, Long::sum);
         }
-        return map;
+        return normalizedMap;
     }
 
     public Map<String, Long> getCountByEraAndCategoryGrouped() {
@@ -383,25 +404,29 @@ public class PostService {
 
     public Map<String, Long> getCountByEraAndPreservationStatusGrouped() {
         List<Object[]> results = postRepository.countByEraAndPreservationStatusGrouped();
-        Map<String, Long> map = new HashMap<>();
+        Map<String, Long> normalizedMap = new LinkedHashMap<>();
         for (Object[] row : results) {
             Long eraId = (Long) row[0];
-            String status = (String) row[1];
+            String rawStatus = (String) row[1];
             Long count = (Long) row[2];
-            map.put(eraId + "_" + status, count);
+            String normalizedLabel = PreservationStatus.fromString(rawStatus).getLabel();
+            String key = eraId + "_" + normalizedLabel;
+            normalizedMap.merge(key, count, Long::sum);
         }
-        return map;
+        return normalizedMap;
     }
 
     public Map<String, Long> getCountByCategoryAndPreservationStatusGrouped() {
         List<Object[]> results = postRepository.countByCategoryAndPreservationStatusGrouped();
-        Map<String, Long> map = new HashMap<>();
+        Map<String, Long> normalizedMap = new LinkedHashMap<>();
         for (Object[] row : results) {
             Long categoryId = (Long) row[0];
-            String status = (String) row[1];
+            String rawStatus = (String) row[1];
             Long count = (Long) row[2];
-            map.put(categoryId + "_" + status, count);
+            String normalizedLabel = PreservationStatus.fromString(rawStatus).getLabel();
+            String key = categoryId + "_" + normalizedLabel;
+            normalizedMap.merge(key, count, Long::sum);
         }
-        return map;
+        return normalizedMap;
     }
 }
