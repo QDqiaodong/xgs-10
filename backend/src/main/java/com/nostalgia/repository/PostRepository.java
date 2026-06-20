@@ -68,6 +68,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p.eraId, p.preservationStatus, COUNT(p) FROM Post p GROUP BY p.eraId, p.preservationStatus")
     List<Object[]> countByEraAndPreservationStatusGrouped();
 
+    @Query("SELECT p.eraId, COUNT(p) FROM Post p GROUP BY p.eraId")
+    List<Object[]> countByEraGrouped();
+
+    @Query("SELECT p.categoryId, COUNT(p) FROM Post p GROUP BY p.categoryId")
+    List<Object[]> countByCategoryGrouped();
+
+    @Query("SELECT p.eraId, p.categoryId, COUNT(p) FROM Post p GROUP BY p.eraId, p.categoryId")
+    List<Object[]> countByEraAndCategoryGrouped();
+
     @Modifying
     @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
     void incrementViewCount(@Param("id") Long id);

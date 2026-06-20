@@ -309,4 +309,99 @@ public class PostService {
 
         post.setImages(sortedImages);
     }
+
+    public long countPosts(Long categoryId, Long eraId, String preservationStatus) {
+        String normalizedStatus = normalizePreservationStatus(preservationStatus);
+
+        boolean hasCategory = categoryId != null;
+        boolean hasEra = eraId != null;
+        boolean hasStatus = normalizedStatus != null;
+
+        if (hasCategory && hasEra && hasStatus) {
+            return postRepository.countByCategoryIdAndEraIdAndPreservationStatus(categoryId, eraId, normalizedStatus);
+        } else if (hasCategory && hasEra) {
+            return postRepository.countByCategoryIdAndEraId(categoryId, eraId);
+        } else if (hasCategory && hasStatus) {
+            return postRepository.countByCategoryIdAndPreservationStatus(categoryId, normalizedStatus);
+        } else if (hasEra && hasStatus) {
+            return postRepository.countByEraIdAndPreservationStatus(eraId, normalizedStatus);
+        } else if (hasCategory) {
+            return postRepository.countByCategoryId(categoryId);
+        } else if (hasEra) {
+            return postRepository.countByEraId(eraId);
+        } else if (hasStatus) {
+            return postRepository.countByPreservationStatus(normalizedStatus);
+        } else {
+            return postRepository.count();
+        }
+    }
+
+    public Map<Long, Long> getCountByEraGrouped() {
+        List<Object[]> results = postRepository.countByEraGrouped();
+        Map<Long, Long> map = new HashMap<>();
+        for (Object[] row : results) {
+            Long eraId = (Long) row[0];
+            Long count = (Long) row[1];
+            map.put(eraId, count);
+        }
+        return map;
+    }
+
+    public Map<Long, Long> getCountByCategoryGrouped() {
+        List<Object[]> results = postRepository.countByCategoryGrouped();
+        Map<Long, Long> map = new HashMap<>();
+        for (Object[] row : results) {
+            Long categoryId = (Long) row[0];
+            Long count = (Long) row[1];
+            map.put(categoryId, count);
+        }
+        return map;
+    }
+
+    public Map<String, Long> getCountByPreservationStatusGrouped() {
+        List<Object[]> results = postRepository.countByPreservationStatusGrouped();
+        Map<String, Long> map = new HashMap<>();
+        for (Object[] row : results) {
+            String status = (String) row[0];
+            Long count = (Long) row[1];
+            map.put(status, count);
+        }
+        return map;
+    }
+
+    public Map<String, Long> getCountByEraAndCategoryGrouped() {
+        List<Object[]> results = postRepository.countByEraAndCategoryGrouped();
+        Map<String, Long> map = new HashMap<>();
+        for (Object[] row : results) {
+            Long eraId = (Long) row[0];
+            Long categoryId = (Long) row[1];
+            Long count = (Long) row[2];
+            map.put(eraId + "_" + categoryId, count);
+        }
+        return map;
+    }
+
+    public Map<String, Long> getCountByEraAndPreservationStatusGrouped() {
+        List<Object[]> results = postRepository.countByEraAndPreservationStatusGrouped();
+        Map<String, Long> map = new HashMap<>();
+        for (Object[] row : results) {
+            Long eraId = (Long) row[0];
+            String status = (String) row[1];
+            Long count = (Long) row[2];
+            map.put(eraId + "_" + status, count);
+        }
+        return map;
+    }
+
+    public Map<String, Long> getCountByCategoryAndPreservationStatusGrouped() {
+        List<Object[]> results = postRepository.countByCategoryAndPreservationStatusGrouped();
+        Map<String, Long> map = new HashMap<>();
+        for (Object[] row : results) {
+            Long categoryId = (Long) row[0];
+            String status = (String) row[1];
+            Long count = (Long) row[2];
+            map.put(categoryId + "_" + status, count);
+        }
+        return map;
+    }
 }

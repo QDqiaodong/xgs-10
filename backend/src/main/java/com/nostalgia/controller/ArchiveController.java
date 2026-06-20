@@ -53,6 +53,10 @@ public class ArchiveController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String preservationStatus) {
         List<Era> eras = eraService.getAllEras();
+        List<Category> allCategories = categoryService.getAllCategories();
+        Map<Long, Category> categoryMapById = allCategories.stream()
+                .collect(Collectors.toMap(Category::getId, cat -> cat));
+
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (Era era : eras) {
@@ -61,6 +65,8 @@ public class ArchiveController {
             eraGroup.put("eraName", era.getName());
             eraGroup.put("yearStart", era.getYearStart());
             eraGroup.put("yearEnd", era.getYearEnd());
+
+            long eraTotalCount = postService.countPosts(categoryId, era.getId(), preservationStatus);
 
             org.springframework.data.domain.Page<Post> postsPage = postService.getPosts(categoryId, era.getId(), preservationStatus, 0, 100);
             List<Post> posts = postsPage.getContent();
@@ -73,18 +79,26 @@ public class ArchiveController {
             for (Map.Entry<Long, List<Post>> entry : categoryMap.entrySet()) {
                 Map<String, Object> catGroup = new LinkedHashMap<>();
                 Long catId = entry.getKey();
-                categoryService.getCategoryById(catId).ifPresent(cat -> {
+                Category cat = categoryMapById.get(catId);
+                if (cat != null) {
                     catGroup.put("categoryId", cat.getId());
                     catGroup.put("categoryName", cat.getName());
                     catGroup.put("categoryIcon", cat.getIcon());
-                });
+                }
                 catGroup.put("items", entry.getValue());
-                catGroup.put("count", entry.getValue().size());
+
+                long catCount;
+                if (categoryId != null) {
+                    catCount = entry.getValue().size();
+                } else {
+                    catCount = postService.countPosts(catId, era.getId(), preservationStatus);
+                }
+                catGroup.put("count", catCount);
                 categoryGroups.add(catGroup);
             }
 
             eraGroup.put("categories", categoryGroups);
-            eraGroup.put("totalCount", posts.size());
+            eraGroup.put("totalCount", eraTotalCount);
             result.add(eraGroup);
         }
 
@@ -98,12 +112,24 @@ public class ArchiveController {
         List<Era> eras = eraService.getAllEras();
         List<Category> categories = categoryService.getAllCategories();
         List<com.nostalgia.entity.PreservationStatus> statuses = com.nostalgia.entity.PreservationStatus.getAllStatuses();
-        org.springframework.data.domain.Page<Post> allPosts = postService.getPosts(null, null, null, 0, Integer.MAX_VALUE);
 
-        stats.setTotalPosts(allPosts.getTotalElements());
+        long totalPosts = postService.countPosts(null, null, null);
+        stats.setTotalPosts(totalPosts);
         stats.setTotalEras(eras.size());
         stats.setTotalCategories(categories.size());
         stats.setTotalPreservationStatuses(statuses.size());
+
+        Map<Long, Long> eraCountMap = postService.getCountByEraGrouped();
+        Map<Long, Long> categoryCountMap = postService.getCountByCategoryGrouped();
+        Map<String, Long> statusCountMap = postService.getCountByPreservationStatusGrouped();
+        Map<String, Long> eraCategoryCountMap = postService.getCountByEraAndCategoryGrouped();
+        Map<String, Long> eraStatusCountMap = postService.getCountByEraAndPreservationStatusGrouped();
+        Map<String, Long> categoryStatusCountMap = postService.getCountByCategoryAndPreservationStatusGrouped();
+
+        String unknownStatusLabel = com.nostalgia.entity.PreservationStatus.UNKNOWN.getLabel();
+        long nullStatusCount = statusCountMap.getOrDefault(null, 0L);
+        long blankStatusCount = statusCountMap.getOrDefault("", 0L);
+        long unknownStatusCount = statusCountMap.getOrDefault(unknownStatusLabel, 0L) + nullStatusCount + blankStatusCount;
 
         Map<String, Long> eraDistribution = new LinkedHashMap<>();
         Map<String, Long> categoryDistribution = new LinkedHashMap<>();
@@ -120,22 +146,26 @@ public class ArchiveController {
             eraStats.setYearStart(era.getYearStart());
             eraStats.setYearEnd(era.getYearEnd());
 
-            org.springframework.data.domain.Page<Post> eraPosts = postService.getPosts(null, era.getId(), null, 0, 1);
-            long eraTotal = eraPosts.getTotalElements();
+            long eraTotal = eraCountMap.getOrDefault(era.getId(), 0L);
             eraStats.setTotalCount(eraTotal);
             eraDistribution.put(era.getName(), eraTotal);
 
             Map<String, Long> byCategory = new LinkedHashMap<>();
             for (Category cat : categories) {
-                org.springframework.data.domain.Page<Post> catEraPosts = postService.getPosts(cat.getId(), era.getId(), null, 0, 1);
-                byCategory.put(cat.getName(), catEraPosts.getTotalElements());
+                String key = era.getId() + "_" + cat.getId();
+                byCategory.put(cat.getName(), eraCategoryCountMap.getOrDefault(key, 0L));
             }
             eraStats.setByCategory(byCategory);
 
             Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
             for (com.nostalgia.entity.PreservationStatus status : statuses) {
-                org.springframework.data.domain.Page<Post> statusEraPosts = postService.getPosts(null, era.getId(), status.getLabel(), 0, 1);
-                byPreservationStatus.put(status.getLabel(), statusEraPosts.getTotalElements());
+                String key = era.getId() + "_" + status.getLabel();
+                long count = eraStatusCountMap.getOrDefault(key, 0L);
+                if (status == com.nostalgia.entity.PreservationStatus.UNKNOWN) {
+                    long eraNullStatusCount = getEraNullStatusCount(era.getId(), eraStatusCountMap);
+                    count += eraNullStatusCount;
+                }
+                byPreservationStatus.put(status.getLabel(), count);
             }
             eraStats.setByPreservationStatus(byPreservationStatus);
 
@@ -150,22 +180,26 @@ public class ArchiveController {
             catStats.setCategoryName(cat.getName());
             catStats.setCategoryIcon(cat.getIcon());
 
-            org.springframework.data.domain.Page<Post> catPosts = postService.getPosts(cat.getId(), null, null, 0, 1);
-            long catTotal = catPosts.getTotalElements();
+            long catTotal = categoryCountMap.getOrDefault(cat.getId(), 0L);
             catStats.setTotalCount(catTotal);
             categoryDistribution.put(cat.getName(), catTotal);
 
             Map<String, Long> byEra = new LinkedHashMap<>();
             for (Era era : eras) {
-                org.springframework.data.domain.Page<Post> eraCatPosts = postService.getPosts(cat.getId(), era.getId(), null, 0, 1);
-                byEra.put(era.getName(), eraCatPosts.getTotalElements());
+                String key = era.getId() + "_" + cat.getId();
+                byEra.put(era.getName(), eraCategoryCountMap.getOrDefault(key, 0L));
             }
             catStats.setByEra(byEra);
 
             Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
             for (com.nostalgia.entity.PreservationStatus status : statuses) {
-                org.springframework.data.domain.Page<Post> statusCatPosts = postService.getPosts(cat.getId(), null, status.getLabel(), 0, 1);
-                byPreservationStatus.put(status.getLabel(), statusCatPosts.getTotalElements());
+                String key = cat.getId() + "_" + status.getLabel();
+                long count = categoryStatusCountMap.getOrDefault(key, 0L);
+                if (status == com.nostalgia.entity.PreservationStatus.UNKNOWN) {
+                    long catNullStatusCount = getCategoryNullStatusCount(cat.getId(), categoryStatusCountMap);
+                    count += catNullStatusCount;
+                }
+                byPreservationStatus.put(status.getLabel(), count);
             }
             catStats.setByPreservationStatus(byPreservationStatus);
 
@@ -181,22 +215,36 @@ public class ArchiveController {
             statusStats.setIcon(status.getIcon());
             statusStats.setColor(status.getColor());
 
-            org.springframework.data.domain.Page<Post> statusPosts = postService.getPosts(null, null, status.getLabel(), 0, 1);
-            long statusTotal = statusPosts.getTotalElements();
+            long statusTotal;
+            if (status == com.nostalgia.entity.PreservationStatus.UNKNOWN) {
+                statusTotal = unknownStatusCount;
+            } else {
+                statusTotal = statusCountMap.getOrDefault(status.getLabel(), 0L);
+            }
             statusStats.setTotalCount(statusTotal);
             preservationStatusDistribution.put(status.getLabel(), statusTotal);
 
             Map<String, Long> byCategory = new LinkedHashMap<>();
             for (Category cat : categories) {
-                org.springframework.data.domain.Page<Post> catStatusPosts = postService.getPosts(cat.getId(), null, status.getLabel(), 0, 1);
-                byCategory.put(cat.getName(), catStatusPosts.getTotalElements());
+                String key = cat.getId() + "_" + status.getLabel();
+                long count = categoryStatusCountMap.getOrDefault(key, 0L);
+                if (status == com.nostalgia.entity.PreservationStatus.UNKNOWN) {
+                    long catNullStatusCount = getCategoryNullStatusCount(cat.getId(), categoryStatusCountMap);
+                    count += catNullStatusCount;
+                }
+                byCategory.put(cat.getName(), count);
             }
             statusStats.setByCategory(byCategory);
 
             Map<String, Long> byEra = new LinkedHashMap<>();
             for (Era era : eras) {
-                org.springframework.data.domain.Page<Post> eraStatusPosts = postService.getPosts(null, era.getId(), status.getLabel(), 0, 1);
-                byEra.put(era.getName(), eraStatusPosts.getTotalElements());
+                String key = era.getId() + "_" + status.getLabel();
+                long count = eraStatusCountMap.getOrDefault(key, 0L);
+                if (status == com.nostalgia.entity.PreservationStatus.UNKNOWN) {
+                    long eraNullStatusCount = getEraNullStatusCount(era.getId(), eraStatusCountMap);
+                    count += eraNullStatusCount;
+                }
+                byEra.put(era.getName(), count);
             }
             statusStats.setByEra(byEra);
 
@@ -206,6 +254,18 @@ public class ArchiveController {
         stats.setPreservationStatusDistribution(preservationStatusDistribution);
 
         return ResponseEntity.ok(stats);
+    }
+
+    private long getEraNullStatusCount(Long eraId, Map<String, Long> eraStatusCountMap) {
+        long nullCount = eraStatusCountMap.getOrDefault(eraId + "_null", 0L);
+        long blankCount = eraStatusCountMap.getOrDefault(eraId + "_", 0L);
+        return nullCount + blankCount;
+    }
+
+    private long getCategoryNullStatusCount(Long categoryId, Map<String, Long> categoryStatusCountMap) {
+        long nullCount = categoryStatusCountMap.getOrDefault(categoryId + "_null", 0L);
+        long blankCount = categoryStatusCountMap.getOrDefault(categoryId + "_", 0L);
+        return nullCount + blankCount;
     }
 
     private void normalizePost(Post post) {
