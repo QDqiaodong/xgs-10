@@ -1,5 +1,37 @@
 <template>
-  <div class="post-detail container" v-if="post">
+  <div class="post-detail container">
+    <div class="loading-state" v-if="loading">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">正在加载回忆...</p>
+    </div>
+
+    <div class="not-found-state" v-else-if="notFound">
+      <div class="not-found-icon">📭</div>
+      <h1 class="not-found-title">回忆未找到</h1>
+      <p class="not-found-message">{{ errorMessage || '该档案不存在或已被删除' }}</p>
+      <div class="not-found-actions">
+        <router-link to="/" class="btn btn-primary">
+          <span class="btn-icon">🏠</span> 返回首页
+        </router-link>
+        <router-link to="/archives" class="btn btn-secondary">
+          <span class="btn-icon">📚</span> 浏览档案
+        </router-link>
+      </div>
+      <div class="not-found-id" v-if="postId">
+        您访问的档案编号：<span class="id-highlight">#{{ postId }}</span>
+      </div>
+    </div>
+
+    <div class="error-state" v-else-if="error && !notFound">
+      <div class="error-icon">⚠️</div>
+      <h1 class="error-title">加载失败</h1>
+      <p class="error-message">{{ errorMessage || '加载回忆时出现问题，请稍后重试' }}</p>
+      <button class="btn btn-primary" @click="retryLoad">
+        <span class="btn-icon">🔄</span> 重新加载
+      </button>
+    </div>
+
+    <div v-else-if="post">
     <router-link to="/" class="back-link">← 返回列表</router-link>
 
     <article class="detail-card card">
@@ -367,6 +399,7 @@
         暂无留言，来说说你的回忆吧~
       </div>
     </section>
+    </div>
   </div>
 </template>
 
@@ -404,6 +437,10 @@ const activeImageIndex = ref(0)
 const isNameplateExpanded = ref(false)
 const isMobile = ref(false)
 const expandedLayers = ref({})
+const loading = ref(true)
+const notFound = ref(false)
+const error = ref(false)
+const errorMessage = ref('')
 
 const toggleLayer = (key) => {
   expandedLayers.value[key] = !expandedLayers.value[key]
@@ -445,6 +482,10 @@ const resetState = () => {
   imageLayouts.value = []
   activeImageIndex.value = 0
   isNameplateExpanded.value = false
+  loading.value = true
+  notFound.value = false
+  error.value = false
+  errorMessage.value = ''
 }
 
 watch(postId, () => {
@@ -593,6 +634,11 @@ const getPreservationIcon = (status) => {
 
 const loadPost = async () => {
   try {
+    loading.value = true
+    notFound.value = false
+    error.value = false
+    errorMessage.value = ''
+    
     const res = await postsAPI.getDetail(postId.value)
     let postData = res.data
     if (postData && postData.eraName) {
@@ -612,7 +658,26 @@ const loadPost = async () => {
     })
   } catch (e) {
     console.error('加载帖子失败', e)
+    const status = e.response?.status
+    const message = e.response?.data?.message
+    
+    if (status === 404) {
+      notFound.value = true
+      errorMessage.value = message || '该档案不存在或已被删除'
+    } else {
+      error.value = true
+      errorMessage.value = message || '加载回忆时出现问题，请稍后重试'
+    }
+  } finally {
+    loading.value = false
   }
+}
+
+const retryLoad = () => {
+  resetState()
+  loadPost()
+  loadComments()
+  checkFavorite()
 }
 
 const loadComments = async () => {
@@ -666,6 +731,122 @@ const submitComment = async () => {
 </script>
 
 <style scoped>
+.loading-state,
+.not-found-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f5e6d3;
+  border-top-color: #d4a574;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 16px;
+  color: #8b6914;
+  margin: 0;
+}
+
+.not-found-icon,
+.error-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+}
+
+.not-found-title,
+.error-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #5d4e37;
+  margin: 0 0 12px 0;
+}
+
+.not-found-message,
+.error-message {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 30px 0;
+  max-width: 500px;
+  line-height: 1.6;
+}
+
+.not-found-actions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #d4a574 0%, #c19660 100%);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(212, 165, 116, 0.4);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #8b6914;
+  border: 2px solid #d4a574;
+}
+
+.btn-secondary:hover {
+  background: #fdf6e3;
+  transform: translateY(-2px);
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+.not-found-id {
+  font-size: 14px;
+  color: #999;
+  padding: 10px 20px;
+  background: #f5f5f5;
+  border-radius: 20px;
+}
+
+.id-highlight {
+  font-weight: 600;
+  color: #8b6914;
+  font-family: 'Courier New', monospace;
+}
+
 .back-link {
   display: inline-block;
   margin-bottom: 20px;

@@ -7,6 +7,7 @@ import com.nostalgia.entity.Post;
 import com.nostalgia.entity.PreservationStatus;
 import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.service.PostService;
+import com.nostalgia.util.PaginationUtils;
 import com.nostalgia.util.TextCleaner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,7 +35,9 @@ public class PostController {
             @RequestParam(required = false) String preservationStatus,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(postService.getPosts(categoryId, eraId, preservationStatus, page, size));
+        int validPage = PaginationUtils.validatePage(page);
+        int validSize = PaginationUtils.validateSize(size);
+        return ResponseEntity.ok(postService.getPosts(categoryId, eraId, preservationStatus, validPage, validSize));
     }
 
     @GetMapping("/hot")

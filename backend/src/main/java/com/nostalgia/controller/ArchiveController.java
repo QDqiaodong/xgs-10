@@ -7,6 +7,7 @@ import com.nostalgia.entity.Post;
 import com.nostalgia.service.CategoryService;
 import com.nostalgia.service.EraService;
 import com.nostalgia.service.PostService;
+import com.nostalgia.util.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +31,9 @@ public class ArchiveController {
             @RequestParam(required = false) String preservationStatus,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        int validPage = PaginationUtils.validatePage(page);
+        int validSize = PaginationUtils.validateSize(size);
+        
         Map<String, Object> result = new HashMap<>();
         List<Era> eras = eraService.getAllEras();
         List<Category> categories = categoryService.getAllCategories();
@@ -37,14 +41,15 @@ public class ArchiveController {
         result.put("categories", categories);
         result.put("preservationStatuses", com.nostalgia.entity.PreservationStatus.getAllStatuses());
 
-        org.springframework.data.domain.Page<Post> postsPage = postService.getPosts(categoryId, eraId, preservationStatus, page, size);
+        org.springframework.data.domain.Page<Post> postsPage = postService.getPosts(categoryId, eraId, preservationStatus, validPage, validSize);
         List<Post> posts = postsPage.getContent();
         posts.forEach(this::normalizePost);
 
         result.put("posts", posts);
         result.put("totalElements", postsPage.getTotalElements());
         result.put("totalPages", postsPage.getTotalPages());
-        result.put("currentPage", page);
+        result.put("currentPage", validPage);
+        result.put("pageSize", validSize);
         return ResponseEntity.ok(result);
     }
 
@@ -68,7 +73,9 @@ public class ArchiveController {
 
             long eraTotalCount = postService.countPosts(categoryId, era.getId(), preservationStatus);
 
-            org.springframework.data.domain.Page<Post> postsPage = postService.getPosts(categoryId, era.getId(), preservationStatus, 0, 100);
+            int groupPage = PaginationUtils.validatePage(0);
+            int groupSize = PaginationUtils.validateSize(100);
+            org.springframework.data.domain.Page<Post> postsPage = postService.getPosts(categoryId, era.getId(), preservationStatus, groupPage, groupSize);
             List<Post> posts = postsPage.getContent();
             posts.forEach(this::normalizePost);
 

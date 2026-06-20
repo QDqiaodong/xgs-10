@@ -27,6 +27,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.nostalgia.config.GlobalExceptionHandler;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -143,7 +144,8 @@ public class PostService {
     @CacheEvict(value = {"hotPosts"}, allEntries = true)
     @Transactional
     public Post getPostById(Long id) {
-        Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("帖子不存在"));
+        Post post = postRepository.findById(id).orElseThrow(() -> 
+            new GlobalExceptionHandler.ResourceNotFoundException("档案编号 " + id + " 不存在，该回忆可能已被删除或从未存在"));
         postRepository.incrementViewCount(id);
         post.setViewCount((post.getViewCount() == null ? 0 : post.getViewCount()) + 1);
         populateCategoryAndEraNames(post);

@@ -329,6 +329,7 @@ import { getCategoryClass, getCategoryStyleVars, getCategoryDescription } from '
 import { getCategoryConfig } from '../icons/categories'
 import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
 import { getStatusConfig, getAllStatuses, normalizePreservationStatus } from '../utils/preservationStatus'
+import { validatePage, validateSize, sanitizePaginationParams } from '../utils/pagination'
 
 const router = useRouter()
 
@@ -344,7 +345,7 @@ const selectedEra = ref(null)
 const selectedPreservationStatus = ref(null)
 const currentPage = ref(0)
 const totalPages = ref(1)
-const pageSize = 10
+const pageSize = ref(10)
 const imageOrientations = ref({})
 
 const getCategoryKey = (categoryName) => {
@@ -499,15 +500,28 @@ const selectTimelineEra = (eraId) => {
 
 const loadPosts = async () => {
   try {
-    const res = await postsAPI.getList({
+    const validPage = validatePage(currentPage.value)
+    const validSize = validateSize(pageSize.value)
+    
+    const params = sanitizePaginationParams({
       categoryId: selectedCategory.value,
       eraId: selectedEra.value,
       preservationStatus: selectedPreservationStatus.value,
       page: currentPage.value,
-      size: pageSize
-    })
+      size: pageSize.value
+    }, 10)
+    
+    const res = await postsAPI.getList(params)
     posts.value = res.data.content
     totalPages.value = res.data.totalPages
+    
+    if (validPage !== currentPage.value) {
+      currentPage.value = validPage
+    }
+    if (validSize !== pageSize.value) {
+      pageSize.value = validSize
+    }
+    
     nextTick(() => detectPostImagesOrientation(posts.value))
   } catch (e) {
     console.error('加载帖子失败', e)
@@ -580,8 +594,9 @@ const clearPreservationStatusFilter = () => {
 }
 
 const changePage = (page) => {
-  if (page >= 0 && page < totalPages.value) {
-    currentPage.value = page
+  const validPage = validatePage(page)
+  if (validPage >= 0 && validPage < totalPages.value) {
+    currentPage.value = validPage
     loadPosts()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }

@@ -465,6 +465,7 @@ import { getCategoryConfig } from '../icons/categories'
 import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
 import { getImageUrl, getMainImage } from '../utils/imageLayout'
 import { getStatusConfig, getAllStatuses } from '../utils/preservationStatus'
+import { validatePage, validateSize, sanitizePaginationParams } from '../utils/pagination'
 import { postsAPI } from '../api'
 
 const eras = ref([])
@@ -478,7 +479,7 @@ const selectedCategory = ref(null)
 const selectedPreservationStatus = ref(null)
 const currentPage = ref(0)
 const totalPages = ref(1)
-const pageSize = 20
+const pageSize = ref(20)
 const viewMode = ref('grouped')
 
 const eraDetail = ref(null)
@@ -661,7 +662,8 @@ const loadStats = async () => {
 
 const loadFilters = async () => {
   try {
-    const res = await archivesAPI.getList({ page: 0, size: 1 })
+    const params = sanitizePaginationParams({ page: 0, size: 1 }, 1)
+    const res = await archivesAPI.getList(params)
     let erasList = res.data.eras || []
     erasList = erasList.map(era => ({
       ...era,
@@ -698,23 +700,36 @@ const loadGroupedData = async () => {
 
 const loadListData = async () => {
   try {
-    const res = await archivesAPI.getList({
+    const validPage = validatePage(currentPage.value)
+    const validSize = validateSize(pageSize.value, 20)
+    
+    const params = sanitizePaginationParams({
       categoryId: selectedCategory.value,
       eraId: selectedEra.value,
       preservationStatus: selectedPreservationStatus.value,
       page: currentPage.value,
-      size: pageSize
-    })
+      size: pageSize.value
+    }, 20)
+    
+    const res = await archivesAPI.getList(params)
     posts.value = res.data.posts || []
     totalPages.value = res.data.totalPages || 1
+    
+    if (validPage !== currentPage.value) {
+      currentPage.value = validPage
+    }
+    if (validSize !== pageSize.value) {
+      pageSize.value = validSize
+    }
   } catch (e) {
     console.error('加载档案列表失败', e)
   }
 }
 
 const changePage = (page) => {
-  if (page >= 0 && page < totalPages.value) {
-    currentPage.value = page
+  const validPage = validatePage(page)
+  if (validPage >= 0 && validPage < totalPages.value) {
+    currentPage.value = validPage
     loadListData()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
