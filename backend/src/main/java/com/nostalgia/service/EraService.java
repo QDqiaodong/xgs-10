@@ -40,39 +40,54 @@ public class EraService {
         List<EraTimelineDTO> timeline = new ArrayList<>();
 
         for (Era era : eras) {
-            EraTimelineDTO dto = new EraTimelineDTO();
-            dto.setId(era.getId());
-            dto.setName(era.getName());
-            dto.setYearStart(era.getYearStart());
-            dto.setYearEnd(era.getYearEnd());
-            dto.setDescription(era.getDescription());
-            dto.setIcon(era.getIcon());
-            dto.setColorScheme(era.getColorScheme());
-            dto.setRepresentativeCategories(era.getRepresentativeCategories());
-
-            long count = postRepository.countByEraId(era.getId());
-            dto.setPostCount((int) count);
-
-            List<Post> topPosts = postRepository.findTopByEraIdOrderByViewCountDesc(era.getId(), PageRequest.of(0, 3));
-            topPosts.forEach(postService::populateCategoryAndEraNamesExternal);
-            dto.setRepresentativePosts(topPosts);
-
-            Map<String, Long> byCategory = new LinkedHashMap<>();
-            for (Category cat : categories) {
-                byCategory.put(cat.getName(), postRepository.countByCategoryIdAndEraId(cat.getId(), era.getId()));
-            }
-            dto.setByCategory(byCategory);
-
-            Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
-            for (PreservationStatus status : statuses) {
-                byPreservationStatus.put(status.getLabel(),
-                        postRepository.countByEraIdAndPreservationStatus(era.getId(), status.getLabel()));
-            }
-            dto.setByPreservationStatus(byPreservationStatus);
-
-            timeline.add(dto);
+            timeline.add(buildEraTimelineDTO(era, categories, statuses));
         }
 
         return timeline;
+    }
+
+    @Cacheable(value = "eras", key = "'detail:' + #id")
+    public EraTimelineDTO getEraDetail(Long id) {
+        Era era = eraRepository.findById(id).orElse(null);
+        if (era == null) {
+            return null;
+        }
+        List<Category> categories = categoryRepository.findAllByOrderBySortOrderAsc();
+        List<PreservationStatus> statuses = PreservationStatus.getAllStatuses();
+        return buildEraTimelineDTO(era, categories, statuses);
+    }
+
+    private EraTimelineDTO buildEraTimelineDTO(Era era, List<Category> categories, List<PreservationStatus> statuses) {
+        EraTimelineDTO dto = new EraTimelineDTO();
+        dto.setId(era.getId());
+        dto.setName(era.getName());
+        dto.setYearStart(era.getYearStart());
+        dto.setYearEnd(era.getYearEnd());
+        dto.setDescription(era.getDescription());
+        dto.setIcon(era.getIcon());
+        dto.setColorScheme(era.getColorScheme());
+        dto.setRepresentativeCategories(era.getRepresentativeCategories());
+
+        long count = postRepository.countByEraId(era.getId());
+        dto.setPostCount((int) count);
+
+        List<Post> topPosts = postRepository.findTopByEraIdOrderByViewCountDesc(era.getId(), PageRequest.of(0, 3));
+        topPosts.forEach(postService::populateCategoryAndEraNamesExternal);
+        dto.setRepresentativePosts(topPosts);
+
+        Map<String, Long> byCategory = new LinkedHashMap<>();
+        for (Category cat : categories) {
+            byCategory.put(cat.getName(), postRepository.countByCategoryIdAndEraId(cat.getId(), era.getId()));
+        }
+        dto.setByCategory(byCategory);
+
+        Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
+        for (PreservationStatus status : statuses) {
+            byPreservationStatus.put(status.getLabel(),
+                    postRepository.countByEraIdAndPreservationStatus(era.getId(), status.getLabel()));
+        }
+        dto.setByPreservationStatus(byPreservationStatus);
+
+        return dto;
     }
 }

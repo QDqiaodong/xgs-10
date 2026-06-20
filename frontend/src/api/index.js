@@ -14,7 +14,8 @@ export const categoriesAPI = {
 
 export const erasAPI = {
   getAll: () => api.get('/eras'),
-  getTimeline: () => api.get('/eras/timeline')
+  getTimeline: () => api.get('/eras/timeline'),
+  getDetail: (id) => api.get(`/eras/${id}`)
 }
 
 export const postsAPI = {

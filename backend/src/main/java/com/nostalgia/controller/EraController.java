@@ -6,6 +6,7 @@ import com.nostalgia.service.EraService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,5 +27,14 @@ public class EraController {
     @GetMapping("/timeline")
     public ResponseEntity<List<EraTimelineDTO>> getEraTimeline() {
         return ResponseEntity.ok(eraService.getEraTimeline());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<EraTimelineDTO> getEraDetail(@PathVariable Long id) {
+        EraTimelineDTO dto = eraService.getEraDetail(id);
+        if (dto == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(dto);
     }
 }

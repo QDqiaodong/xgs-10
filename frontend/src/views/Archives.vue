@@ -70,7 +70,7 @@
         <span class="filter-label">年代筛选：</span>
         <button
           :class="['filter-btn', `era-${getEraClass(selectedEraName)}`, { active: !selectedEra }]"
-          @click="selectedEra = null"
+          @click="clearEraSelection"
         >
           全部年代
         </button>
@@ -78,7 +78,7 @@
           v-for="era in eras"
           :key="era.id"
           :class="['filter-btn', `era-${getEraClass(era.name)}`, { active: selectedEra === era.id }]"
-          @click="selectedEra = era.id"
+          @click="selectEra(era.id)"
         >
           <span class="era-dot"></span>
           {{ era.name }}
@@ -120,6 +120,169 @@
         >
           <span class="status-icon">{{ status.icon }}</span>
           {{ status.label }}
+        </button>
+      </div>
+    </section>
+
+    <section class="era-info-section" v-if="eraDetail && selectedEra">
+      <div :class="['era-profile-card', `profile-${getEraClass(eraDetail.name)}`]">
+        <div class="profile-header">
+          <div class="profile-header-bg"></div>
+          <div class="profile-icon-wrap">
+            <span class="profile-icon">{{ eraDetail.icon || getEraIcon(eraDetail.name) }}</span>
+          </div>
+          <div class="profile-title-area">
+            <h2 class="profile-name">{{ eraDetail.name }}</h2>
+            <span class="profile-years">{{ eraDetail.yearStart }} - {{ eraDetail.yearEnd }}</span>
+          </div>
+          <div class="profile-count-badge">
+            <span class="badge-num">{{ eraDetail.postCount }}</span>
+            <span class="badge-text">件藏品</span>
+          </div>
+        </div>
+
+        <div class="profile-body">
+          <div class="profile-section profile-desc">
+            <div class="section-label">
+              <span class="label-icon">📖</span>年代说明
+            </div>
+            <p class="desc-text">{{ eraDetail.description || '暂无年代说明' }}</p>
+          </div>
+
+          <div class="profile-section profile-categories">
+            <div class="section-label">
+              <span class="label-icon">🏷️</span>代表类别
+            </div>
+            <div class="rep-categories-list">
+              <span
+                v-for="cat in parseCategories(eraDetail.representativeCategories)"
+                :key="cat"
+                :class="['rep-cat-tag', `cat-${getCategoryKeyByName(cat)}`]"
+                :style="getCategoryStyleVarsByName(cat)"
+              >
+                <CategoryIcon :category="cat" size="xs" mode="emoji" />
+                {{ cat }}
+              </span>
+              <span v-if="!parseCategories(eraDetail.representativeCategories).length" class="empty-tip">
+                暂无代表类别
+              </span>
+            </div>
+          </div>
+
+          <div class="profile-section profile-stats">
+            <div class="section-label">
+              <span class="label-icon">📊</span>藏品统计
+            </div>
+            <div class="stats-mini-grid">
+              <div class="mini-stat-item mini-stat-total">
+                <span class="mini-stat-num">{{ eraDetail.postCount }}</span>
+                <span class="mini-stat-label">馆藏总数</span>
+              </div>
+              <div class="mini-stat-item mini-stat-cat">
+                <span class="mini-stat-num">{{ categoryCount }}</span>
+                <span class="mini-stat-label">涵盖类别</span>
+              </div>
+              <div class="mini-stat-item mini-stat-status">
+                <span class="mini-stat-num">{{ preservationStatusCount }}</span>
+                <span class="mini-stat-label">保存状态</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-section profile-category-breakdown" v-if="hasCategoryData">
+            <div class="section-label">
+              <span class="section-fold" @click="toggleCategoryBreakdown">
+                <span class="label-icon">📈</span>分类分布
+                <span class="fold-arrow">{{ showCategoryBreakdown ? '▼' : '▶' }}</span>
+              </span>
+            </div>
+            <div class="category-breakdown-wrap" v-show="showCategoryBreakdown">
+              <div class="breakdown-bars">
+                <div
+                  v-for="item in categoryBreakdownList"
+                  :key="item.name"
+                  class="breakdown-bar-item"
+                >
+                  <div class="breakdown-label">
+                    <span :class="['breakdown-cat-icon', `cat-${getCategoryKeyByName(item.name)}`]" :style="getCategoryStyleVarsByName(item.name)">
+                      <CategoryIcon :category="item.name" size="xs" mode="emoji" />
+                    </span>
+                    <span class="breakdown-name">{{ item.name }}</span>
+                    <span class="breakdown-count">{{ item.count }} 件</span>
+                  </div>
+                  <div class="breakdown-track">
+                    <div
+                      class="breakdown-fill"
+                      :style="{
+                        width: getBreakdownPercentage(item.count) + '%',
+                        background: getCategoryPrimaryColor(item.name)
+                      }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-section profile-preservation" v-if="hasPreservationData">
+            <div class="section-label">
+              <span class="section-fold" @click="togglePreservationBreakdown">
+                <span class="label-icon">🔧</span>保存状态
+                <span class="fold-arrow">{{ showPreservationBreakdown ? '▼' : '▶' }}</span>
+              </span>
+            </div>
+            <div class="preservation-breakdown-wrap" v-show="showPreservationBreakdown">
+              <div class="preservation-pie-list">
+                <div
+                  v-for="item in preservationBreakdownList"
+                  :key="item.label"
+                  class="preservation-pie-item"
+                >
+                  <div class="pie-info">
+                    <span class="pie-icon">{{ getStatusConfig(item.label).icon }}</span>
+                    <span class="pie-label">{{ item.label }}</span>
+                  </div>
+                  <div class="pie-bar-track">
+                    <div
+                      class="pie-bar-fill"
+                      :style="{
+                        width: getBreakdownPercentage(item.count) + '%',
+                        background: getStatusConfig(item.label).color
+                      }"
+                    ></div>
+                  </div>
+                  <span class="pie-count">{{ item.count }} 件</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-section profile-rep-posts" v-if="eraDetail.representativePosts && eraDetail.representativePosts.length > 0">
+            <div class="section-label">
+              <span class="label-icon">✨</span>代表藏品
+            </div>
+            <div class="rep-posts-list">
+              <router-link
+                v-for="post in eraDetail.representativePosts"
+                :key="post.id"
+                :to="`/post/${post.id}`"
+                :class="['rep-post-card', `card-era-${getEraClass(post.eraName)}`]"
+              >
+                <div class="rep-post-img">
+                  <img :src="getItemImgUrl(post.images)" :alt="post.title" />
+                </div>
+                <div class="rep-post-info">
+                  <h4 class="rep-post-title">{{ post.title }}</h4>
+                  <p class="rep-post-item">物件：{{ safeDisplayItemName(post.itemName) }}</p>
+                </div>
+              </router-link>
+            </div>
+          </div>
+        </div>
+
+        <button class="close-profile-btn" @click="clearEraSelection">
+          <span>清除年代筛选</span>
+          <span class="close-x">×</span>
         </button>
       </div>
     </section>
@@ -294,10 +457,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed, nextTick } from 'vue'
-import { archivesAPI } from '../api'
+import { ref, onMounted, watch, computed } from 'vue'
+import { archivesAPI, erasAPI } from '../api'
 import { displayItemName, buildArchiveSummary, truncateForChip } from '../utils/textCleaner'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
+import { getCategoryConfig } from '../icons/categories'
 import { getEraClass, getEraIcon, sortErasDefault, normalizeEraName } from '../utils/eraUtils'
 import { getImageUrl, getMainImage } from '../utils/imageLayout'
 import { getStatusConfig, getAllStatuses } from '../utils/preservationStatus'
@@ -316,6 +480,10 @@ const currentPage = ref(0)
 const totalPages = ref(1)
 const pageSize = 20
 const viewMode = ref('grouped')
+
+const eraDetail = ref(null)
+const showCategoryBreakdown = ref(true)
+const showPreservationBreakdown = ref(true)
 
 const selectedEraName = computed(() => {
   const era = eras.value.find(e => e.id === selectedEra.value)
@@ -341,6 +509,35 @@ const filteredEraGroups = computed(() => {
     }).filter(g => g.totalCount > 0)
   }
   return result
+})
+
+const categoryCount = computed(() => {
+  if (!eraDetail.value || !eraDetail.value.byCategory) return 0
+  return Object.values(eraDetail.value.byCategory).filter(c => c > 0).length
+})
+
+const preservationStatusCount = computed(() => {
+  if (!eraDetail.value || !eraDetail.value.byPreservationStatus) return 0
+  return Object.values(eraDetail.value.byPreservationStatus).filter(c => c > 0).length
+})
+
+const hasCategoryData = computed(() => categoryCount.value > 0)
+const hasPreservationData = computed(() => preservationStatusCount.value > 0)
+
+const categoryBreakdownList = computed(() => {
+  if (!eraDetail.value || !eraDetail.value.byCategory) return []
+  return Object.entries(eraDetail.value.byCategory)
+    .map(([name, count]) => ({ name, count }))
+    .filter(item => item.count > 0)
+    .sort((a, b) => b.count - a.count)
+})
+
+const preservationBreakdownList = computed(() => {
+  if (!eraDetail.value || !eraDetail.value.byPreservationStatus) return []
+  return Object.entries(eraDetail.value.byPreservationStatus)
+    .map(([label, count]) => ({ label, count }))
+    .filter(item => item.count > 0)
+    .sort((a, b) => b.count - a.count)
 })
 
 const safeDisplayItemName = (name) => displayItemName(name)
@@ -371,6 +568,64 @@ const getPreservationBadgeStyle = (statusLabel) => {
     color: '#fff',
     border: `1px solid ${config.borderColor}`
   }
+}
+
+const getPreservationClass = (statusLabel) => {
+  return `preservation-${getStatusConfig(statusLabel).key || 'default'}`
+}
+
+const parseCategories = (catStr) => {
+  if (!catStr) return []
+  return String(catStr).split(',').map(c => c.trim()).filter(c => c)
+}
+
+const getCategoryKeyByName = (catName) => {
+  if (!catName) return 'default'
+  const config = getCategoryConfig(catName)
+  return config.key || 'default'
+}
+
+const getCategoryStyleVarsByName = (catName) => {
+  return getCategoryStyleVars(catName)
+}
+
+const getCategoryPrimaryColor = (catName) => {
+  const config = getCategoryConfig(catName)
+  return config.primary || '#d4a574'
+}
+
+const toggleCategoryBreakdown = () => {
+  showCategoryBreakdown.value = !showCategoryBreakdown.value
+}
+
+const togglePreservationBreakdown = () => {
+  showPreservationBreakdown.value = !showPreservationBreakdown.value
+}
+
+const getBreakdownPercentage = (count) => {
+  const total = eraDetail.value ? eraDetail.value.postCount : 0
+  if (!total || total === 0) return 0
+  return Math.min(100, Math.round((count / total) * 100))
+}
+
+const selectEra = async (eraId) => {
+  selectedEra.value = eraId
+  try {
+    const res = await erasAPI.getDetail(eraId)
+    if (res.data) {
+      eraDetail.value = {
+        ...res.data,
+        name: normalizeEraName(res.data.name)
+      }
+    }
+  } catch (e) {
+    console.error('加载年代详情失败', e)
+  }
+}
+
+const clearEraSelection = () => {
+  selectedEra.value = null
+  eraDetail.value = null
 }
 
 const loadPreservationStatuses = async () => {
@@ -648,6 +903,7 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   border: 2px solid transparent;
+  cursor: pointer;
 }
 
 .filter-btn:hover {
@@ -725,15 +981,475 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.preservation-badge {
+.era-info-section {
+  margin-bottom: 30px;
+}
+
+.era-profile-card {
+  position: relative;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(93, 78, 55, 0.12);
+}
+
+.profile-header {
+  position: relative;
+  padding: 32px 32px 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  overflow: hidden;
+}
+
+.profile-header-bg {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+.profile-60s .profile-header-bg {
+  background: linear-gradient(135deg, #5d4037 0%, #6d4c41 50%, #8d6e63 100%);
+}
+.profile-70s .profile-header-bg {
+  background: linear-gradient(135deg, #bf360c 0%, #e65100 50%, #ff8f00 100%);
+}
+.profile-80s .profile-header-bg {
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);
+}
+.profile-90s .profile-header-bg {
+  background: linear-gradient(135deg, #e65100 0%, #ff6f00 50%, #ffa726 100%);
+}
+.profile-00s .profile-header-bg {
+  background: linear-gradient(135deg, #006064 0%, #00838f 50%, #00acc1 100%);
+}
+
+.profile-icon-wrap {
+  position: relative;
+  z-index: 1;
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.profile-icon {
+  font-size: 36px;
+  color: #fff;
+}
+
+.profile-title-area {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px 0;
+  letter-spacing: 1px;
+}
+
+.profile-60s .profile-name { font-family: 'STKaiti', 'KaiTi', serif; }
+.profile-70s .profile-name { font-family: 'STFangsong', 'FangSong', serif; }
+.profile-80s .profile-name { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; }
+.profile-90s .profile-name { letter-spacing: 0.5px; }
+.profile-00s .profile-name { font-family: 'Segoe UI', 'PingFang SC', sans-serif; font-weight: 600; }
+
+.profile-years {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.85);
   font-weight: 500;
-  backdrop-filter: blur(8px);
+}
+
+.profile-count-badge {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  padding: 12px 20px;
+  text-align: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.badge-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  display: block;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.badge-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.profile-body {
+  padding: 28px 32px 32px;
+}
+
+.profile-section {
+  margin-bottom: 24px;
+}
+
+.profile-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #5d4e37;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f5e6d3;
+}
+
+.label-icon {
+  font-size: 16px;
+}
+
+.section-fold {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fold-arrow {
+  font-size: 11px;
+  color: #999;
+  margin-left: 4px;
+  transition: transform 0.2s;
+}
+
+.desc-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #555;
+  margin: 0;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fdf8f2 0%, #faf3e7 100%);
+  border-radius: 12px;
+  border-left: 4px solid #d4a574;
+}
+
+.rep-categories-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rep-cat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--cat-bg-gradient, #f5e6d3);
+  color: var(--cat-text, #8b6914);
+  border: 1.5px solid var(--cat-border, #e8d5b8);
+  transition: all 0.3s;
+}
+
+.rep-cat-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.empty-tip {
+  font-size: 13px;
+  color: #999;
+  padding: 8px 0;
+}
+
+.stats-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.mini-stat-item {
+  text-align: center;
+  padding: 18px 12px;
+  border-radius: 12px;
+  transition: transform 0.3s;
+}
+
+.mini-stat-item:hover {
+  transform: translateY(-3px);
+}
+
+.mini-stat-total {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+}
+.mini-stat-cat {
+  background: linear-gradient(135deg, #fdf6e3 0%, #f5e6d3 100%);
+}
+.mini-stat-status {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.mini-stat-num {
+  font-size: 26px;
+  font-weight: 700;
+  display: block;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.mini-stat-total .mini-stat-num { color: #f57c00; }
+.mini-stat-cat .mini-stat-num { color: #8b6914; }
+.mini-stat-status .mini-stat-num { color: #1565c0; }
+
+.mini-stat-label {
+  font-size: 12px;
+  color: #777;
+  font-weight: 500;
+}
+
+.category-breakdown-wrap,
+.preservation-breakdown-wrap {
+  animation: fadeSlideDown 0.3s ease;
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.breakdown-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.breakdown-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.breakdown-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.breakdown-cat-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cat-bg-gradient, #f5e6d3);
+  border: 1px solid var(--cat-border, #e8d5b8);
+  flex-shrink: 0;
+}
+
+.breakdown-name {
+  color: #5d4e37;
+  font-weight: 500;
+  flex: 1;
+}
+
+.breakdown-count {
+  color: #8b6914;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.breakdown-track {
+  height: 10px;
+  background: #f5e6d3;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.breakdown-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.preservation-pie-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preservation-pie-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #faf8f4;
+  border-radius: 10px;
+}
+
+.pie-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 90px;
+}
+
+.pie-icon {
+  font-size: 15px;
+}
+
+.pie-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+}
+
+.pie-bar-track {
+  flex: 1;
+  height: 10px;
+  background: #f5e6d3;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.pie-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.pie-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  flex-shrink: 0;
+  width: 50px;
+  text-align: right;
+}
+
+.rep-posts-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.rep-post-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #f0e6d8;
+  transition: all 0.3s;
+}
+
+.rep-post-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.rep-post-img {
+  height: 120px;
+  overflow: hidden;
+  background: #f5f0eb;
+}
+
+.rep-post-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s;
+}
+
+.rep-post-card:hover .rep-post-img img {
+  transform: scale(1.08);
+}
+
+.rep-post-info {
+  padding: 12px 14px;
+  flex: 1;
+}
+
+.rep-post-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #5d4e37;
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rep-post-item {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+  font-style: italic;
+}
+
+.close-profile-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.close-profile-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.close-x {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .era-section {
@@ -805,10 +1521,6 @@ onMounted(() => {
   margin-bottom: 20px;
   padding-bottom: 12px;
   border-bottom: 2px dashed #e8d5b8;
-}
-
-.category-icon {
-  font-size: 24px;
 }
 
 .category-name {
@@ -1030,6 +1742,7 @@ onMounted(() => {
   color: #d4a574;
   font-size: 13px;
   transition: all 0.3s;
+  cursor: pointer;
 }
 
 .toggle-btn:hover {
@@ -1083,11 +1796,18 @@ onMounted(() => {
   color: #d4a574;
   font-size: 14px;
   transition: all 0.3s;
+  cursor: pointer;
 }
 
 .page-btn:hover:not(.disabled) {
-  background: #d4a574;
+  background: #fdf6e3;
+  transform: translateY(-1px);
+}
+
+.page-btn.active {
+  background: linear-gradient(135deg, #d4a574 0%, #c19660 100%);
   color: #fff;
+  border-color: #c19660;
 }
 
 .page-btn.disabled {
@@ -1097,30 +1817,84 @@ onMounted(() => {
 
 .page-info {
   font-size: 14px;
-  color: #666;
+  color: #8b6914;
+  min-width: 80px;
+  text-align: center;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
+  .era-filter-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
   .archive-items-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .era-profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .era-header-left {
+    flex-direction: column;
+  }
+
+  .era-icon-container {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+
+  .close-profile-btn {
+    position: static;
+    margin-top: 12px;
+    align-self: center;
+  }
+
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .rep-cats-row,
+  .rep-posts-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 28px;
+@media (max-width: 600px) {
+  .era-filter-row {
+    justify-content: center;
   }
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
+
   .archive-items-grid {
     grid-template-columns: 1fr;
   }
-  .era-name {
-    font-size: 18px;
+
+  .content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
-  .category-header {
+
+  .rep-cats-row,
+  .rep-posts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .breakdown-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .breakdown-label {
+    min-width: auto;
+  }
+
+  .pagination {
     flex-wrap: wrap;
+    gap: 10px;
   }
 }
 </style>
