@@ -295,12 +295,12 @@
                   class="timeline-item"
                 >
                   <div class="timeline-line" v-if="idx < post.timelineEvents.length - 1"></div>
-                  <div :class="['timeline-dot', `event-${event.eventType.toLowerCase()}`]">
+                  <div :class="['timeline-dot', getEventTypeClass(event.eventType)]">
                     <span class="dot-icon">{{ getEventTypeIcon(event.eventType) }}</span>
                   </div>
                   <div class="timeline-content">
                     <div class="timeline-header">
-                      <span :class="['event-tag', `tag-${event.eventType.toLowerCase()}`]">
+                      <span :class="['event-tag', getEventTagClass(event.eventType)]">
                         {{ getEventTypeLabel(event.eventType) }}
                       </span>
                       <span class="timeline-date">{{ formatEventDate(event.eventDate) }}</span>
@@ -549,6 +549,26 @@ const getEventTypeLabel = (type) => {
   return labels[type] || '事件'
 }
 
+const getEventTypeClass = (type) => {
+  if (!type) return 'event-default'
+  const validTypes = ['ACQUISITION', 'USAGE', 'IDLE', 'DISPOSAL']
+  const upperType = type.toUpperCase()
+  if (validTypes.includes(upperType)) {
+    return `event-${upperType.toLowerCase()}`
+  }
+  return 'event-default'
+}
+
+const getEventTagClass = (type) => {
+  if (!type) return 'tag-default'
+  const validTypes = ['ACQUISITION', 'USAGE', 'IDLE', 'DISPOSAL']
+  const upperType = type.toUpperCase()
+  if (validTypes.includes(upperType)) {
+    return `tag-${upperType.toLowerCase()}`
+  }
+  return 'tag-default'
+}
+
 const getPreservationClass = (status) => {
   if (!status) return 'preservation-default'
   const s = status.toLowerCase()
@@ -577,6 +597,12 @@ const loadPost = async () => {
     let postData = res.data
     if (postData && postData.eraName) {
       postData.eraName = normalizeEraName(postData.eraName)
+    }
+    if (postData && postData.timelineEvents && Array.isArray(postData.timelineEvents)) {
+      postData.timelineEvents = postData.timelineEvents.filter(event => event && event.id).map(event => ({
+        ...event,
+        eventType: event.eventType || 'USAGE'
+      }))
     }
     post.value = postData
     nextTick(() => {
@@ -1458,6 +1484,10 @@ const submitComment = async () => {
   background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
 }
 
+.timeline-dot.event-default {
+  background: linear-gradient(135deg, #8c8c8c 0%, #595959 100%);
+}
+
 .dot-icon {
   font-size: 14px;
 }
@@ -1504,6 +1534,10 @@ const submitComment = async () => {
 
 .tag-disposal {
   background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+}
+
+.tag-default {
+  background: linear-gradient(135deg, #8c8c8c 0%, #595959 100%);
 }
 
 .timeline-date {

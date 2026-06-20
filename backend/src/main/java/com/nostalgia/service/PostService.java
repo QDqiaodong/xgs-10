@@ -302,8 +302,19 @@ public class PostService {
     }
 
     private void populateTimelineEvents(Post post) {
-        List<TimelineEvent> events = timelineEventRepository.findByPostIdOrderByEventDateAscSortOrderAsc(post.getId());
-        post.setTimelineEvents(events);
+        try {
+            List<TimelineEvent> events = timelineEventRepository.findByPostIdOrderByEventDateAscSortOrderAsc(post.getId());
+            if (events != null) {
+                events.forEach(event -> {
+                    if (event.getEventType() == null) {
+                        event.setEventType(TimelineEvent.EventType.USAGE);
+                    }
+                });
+            }
+            post.setTimelineEvents(events);
+        } catch (Exception e) {
+            post.setTimelineEvents(java.util.Collections.emptyList());
+        }
     }
 
     private void normalizeImages(Post post) {

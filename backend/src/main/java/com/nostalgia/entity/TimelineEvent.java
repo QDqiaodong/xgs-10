@@ -1,5 +1,6 @@
 package com.nostalgia.entity;
 
+import com.nostalgia.util.EventTypeConverter;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -27,8 +28,8 @@ public class TimelineEvent {
     @Column(name = "post_id", nullable = false)
     private Long postId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", nullable = false, length = 20)
+    @Convert(converter = EventTypeConverter.class)
+    @Column(name = "event_type", length = 20)
     private EventType eventType;
 
     @Column(name = "event_date", nullable = false)
