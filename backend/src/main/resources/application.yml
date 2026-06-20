@@ -60,6 +60,14 @@ app:
   upload:
     path: ${APP_UPLOAD_PATH:./uploads}
     url-prefix: /uploads
+  image:
+    compression:
+      quality: 0.8
+      max-width: 1920
+      max-height: 1080
+    thumbnail:
+      width: 300
+      height: 300
   cache:
     hot-posts-ttl: 3600
     hot-categories-ttl: 7200

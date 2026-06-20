@@ -191,9 +191,11 @@
           :to="`/post/${post.id}`"
           :class="['hot-card', 'card', `card-era-${getEraClass(post.eraName)}`]"
         >
-          <div :class="['hot-image', getCardImageClass(getFirstImgOrientation(post.images))]">
-            <div :class="['image-overlay', `overlay-${getEraClass(post.eraName)}`]"></div>
-            <img :src="getFirstImgUrl(post.images) || 'https://picsum.photos/400/300'" :alt="post.title" />
+          <div :class="['hot-image', getCardImageClass(getFirstImgOrientation(post.images)), 'vintage-photo-frame', `frame-era-${getEraClass(post.eraName)}`]">
+            <div class="frame-paper-texture"></div>
+            <div class="frame-inner">
+              <img :src="getFirstImgUrl(post.images) || 'https://picsum.photos/400/300'" :alt="post.title" />
+            </div>
             <div :class="['era-badge', `badge-${getEraClass(post.eraName)}`]">
               {{ post.eraName }}
             </div>
@@ -233,9 +235,11 @@
           :to="`/post/${post.id}`"
           :class="['post-card', 'card', `card-era-${getEraClass(post.eraName)}`]"
         >
-          <div :class="['post-image', getCardImageClass(getFirstImgOrientation(post.images))]">
-            <div :class="['image-overlay', `overlay-${getEraClass(post.eraName)}`]"></div>
-            <img :src="getFirstImgUrl(post.images) || 'https://picsum.photos/400/300'" :alt="post.title" />
+          <div :class="['post-image', getCardImageClass(getFirstImgOrientation(post.images)), 'vintage-photo-frame', `frame-era-${getEraClass(post.eraName)}`]">
+            <div class="frame-paper-texture"></div>
+            <div class="frame-inner">
+              <img :src="getFirstImgUrl(post.images) || 'https://picsum.photos/400/300'" :alt="post.title" />
+            </div>
             <div :class="['era-badge', `badge-${getEraClass(post.eraName)}`]">
               <span class="badge-icon">{{ getEraIcon(post.eraName) }}</span>
               {{ post.eraName }}
@@ -1168,6 +1172,8 @@ onMounted(() => {
 .hot-image, .post-image {
   position: relative;
   overflow: hidden;
+  padding: 8px;
+  border-radius: 0;
 }
 
 .hot-image {
@@ -1175,14 +1181,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f0eb;
 }
+
 .post-image {
   height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f0eb;
 }
 
 .hot-image.img-landscape { height: 170px; }
@@ -1195,12 +1200,19 @@ onMounted(() => {
 .post-image.img-square { height: 240px; }
 .post-image.img-detail { height: 200px; }
 
+.hot-image .frame-inner,
+.post-image .frame-inner {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
 .hot-image img, .post-image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   transition: transform 0.5s;
-  background: #faf7f2;
 }
 
 .hot-image.img-landscape img,
@@ -1213,9 +1225,14 @@ onMounted(() => {
   object-fit: cover;
 }
 
-.hot-card:hover .hot-image img,
-.post-card:hover .post-image img {
+.hot-card:hover .hot-image .frame-inner img,
+.post-card:hover .post-image .frame-inner img {
   transform: scale(1.05);
+}
+
+.hot-image .frame-paper-texture,
+.post-image .frame-paper-texture {
+  opacity: 0.04;
 }
 
 .image-overlay {

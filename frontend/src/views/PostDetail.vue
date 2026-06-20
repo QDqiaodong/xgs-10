@@ -14,13 +14,19 @@
       <div class="split-layout">
         <div class="split-left">
           <div class="main-image-area">
-            <div class="main-image-wrapper" v-if="post.images && post.images.length > 0">
-              <img
-                :src="getImageUrl(mainImage)"
-                :alt="post.title"
-                class="main-image"
-              />
-              <div class="image-frame-decoration"></div>
+            <div 
+              class="main-image-wrapper vintage-photo-frame" 
+              :class="`frame-era-${getEraClass(post.eraName)}`"
+              v-if="post.images && post.images.length > 0"
+            >
+              <div class="frame-paper-texture"></div>
+              <div class="frame-inner">
+                <img
+                  :src="getImageUrl(mainImage)"
+                  :alt="post.title"
+                  class="main-image"
+                />
+              </div>
             </div>
             <div class="main-image-placeholder" v-else>
               <span class="placeholder-icon">📷</span>
@@ -31,10 +37,12 @@
               <div
                 v-for="(img, idx) in post.images"
                 :key="idx"
-                :class="['thumbnail-item', { active: idx === activeImageIndex }]"
+                :class="['thumbnail-item', 'vintage-photo-frame', `frame-era-${getEraClass(post.eraName)}`, { active: idx === activeImageIndex }]"
                 @click="activeImageIndex = idx"
               >
-                <img :src="getImageUrl(img)" :alt="`${post.title} ${idx + 1}`" />
+                <div class="frame-inner">
+                  <img :src="getImageUrl(img)" :alt="`${post.title} ${idx + 1}`" />
+                </div>
               </div>
             </div>
           </div>
@@ -378,7 +386,7 @@ import {
   normalizeImageList
 } from '../utils/imageLayout'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
-import { normalizeEraName } from '../utils/eraUtils'
+import { normalizeEraName, getEraClass } from '../utils/eraUtils'
 import CategoryIcon from '../components/CategoryIcon.vue'
 
 const route = useRoute()
@@ -696,41 +704,34 @@ const submitComment = async () => {
 
 .main-image-wrapper {
   position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #f5f0eb 0%, #e8d5b8 100%);
+  border-radius: 8px;
   aspect-ratio: 4 / 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 32px rgba(93, 78, 55, 0.15);
+  padding: 0;
+  margin: 0;
 }
 
 .main-image-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
-  border: 2px solid rgba(212, 165, 116, 0.3);
-  border-radius: 8px;
-  pointer-events: none;
-  z-index: 1;
+  display: none;
 }
 
-.image-frame-decoration {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
+.main-image-wrapper .frame-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #faf7f2;
+  border-radius: 2px;
 }
 
 .main-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 16px;
+  padding: 0;
 }
 
 .main-image-placeholder {
@@ -765,24 +766,35 @@ const submitComment = async () => {
 .thumbnail-item {
   width: 64px;
   height: 64px;
-  border-radius: 6px;
-  overflow: hidden;
+  border-radius: 4px;
   cursor: pointer;
-  border: 2px solid transparent;
-  opacity: 0.6;
+  opacity: 0.7;
   transition: all 0.3s;
-  background: #f5f0eb;
+  padding: 3px;
+}
+
+.thumbnail-item::before {
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
 }
 
 .thumbnail-item:hover {
   opacity: 1;
-  border-color: #d4a574;
+  transform: translateY(-2px);
 }
 
 .thumbnail-item.active {
   opacity: 1;
-  border-color: #d4a574;
-  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
+  box-shadow: 0 0 0 2px currentColor;
+}
+
+.thumbnail-item .frame-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  overflow: hidden;
 }
 
 .thumbnail-item img {

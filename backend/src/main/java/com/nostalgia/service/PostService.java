@@ -45,6 +45,7 @@ public class PostService {
     private final CategoryRepository categoryRepository;
     private final EraRepository eraRepository;
     private final TimelineEventRepository timelineEventRepository;
+    private final ImageProcessingService imageProcessingService;
 
     private final String uploadPath = "/app/uploads";
 
@@ -163,28 +164,10 @@ public class PostService {
     public Post createPost(Post post, List<MultipartFile> images, List<TimelineEvent> timelineEvents) throws IOException {
         if (images != null && !images.isEmpty()) {
             List<PostImage> postImages = new ArrayList<>();
-            Path uploadDir = Paths.get(uploadPath);
-            if (!Files.exists(uploadDir)) {
-                Files.createDirectories(uploadDir);
-            }
 
             for (int i = 0; i < images.size(); i++) {
                 MultipartFile image = images.get(i);
-                String fileName = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-                Path filePath = uploadDir.resolve(fileName);
-                Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                PostImage postImage = new PostImage();
-                postImage.setUrl("/api/uploads/" + fileName);
-                postImage.setSortOrder(i);
-                postImage.setIsMain(i == 0);
-
-                ImageInfo imageInfo = ImageInfo.getImageInfo(image);
-                if (imageInfo != null) {
-                    postImage.setWidth(imageInfo.getWidth());
-                    postImage.setHeight(imageInfo.getHeight());
-                }
-
+                PostImage postImage = imageProcessingService.processImage(image, i);
                 postImages.add(postImage);
             }
             post.setImages(postImages);
@@ -337,6 +320,31 @@ public class PostService {
             }
             if (img.getIsMain() == null) {
                 img.setIsMain(i == 0);
+            }
+            if (img.getUrl() != null) {
+                if (img.getOriginalUrl() == null) {
+                    img.setOriginalUrl(img.getUrl());
+                }
+                if (img.getCompressedUrl() == null) {
+                    img.setCompressedUrl(img.getUrl());
+                }
+                if (img.getThumbnailUrl() == null) {
+                    img.setThumbnailUrl(img.getUrl());
+                }
+            }
+            if (img.getProcessingStatus() == null) {
+                img.setProcessingStatus("COMPLETED");
+            }
+            if (img.getWidth() != null && img.getHeight() != null && img.getHeight() != 0) {
+                if (img.getDisplayRatio() == null) {
+                    img.setDisplayRatio((double) img.getWidth() / img.getHeight());
+                }
+            }
+            if (img.getOriginalWidth() == null && img.getWidth() != null) {
+                img.setOriginalWidth(img.getWidth());
+            }
+            if (img.getOriginalHeight() == null && img.getHeight() != null) {
+                img.setOriginalHeight(img.getHeight());
             }
         }
 

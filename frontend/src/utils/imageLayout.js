@@ -5,11 +5,37 @@ export const ImageOrientation = {
   DETAIL: 'detail'
 }
 
+export const ImageProcessingStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+}
+
 export function getImageUrl(img) {
   if (!img) return ''
   if (typeof img === 'string') return img
   if (typeof img === 'object' && img.url) return img.url
   return ''
+}
+
+export function getOriginalImageUrl(img) {
+  if (!img || typeof img !== 'object') return getImageUrl(img)
+  return img.originalUrl || img.url || ''
+}
+
+export function getCompressedImageUrl(img) {
+  if (!img || typeof img !== 'object') return getImageUrl(img)
+  return img.compressedUrl || img.url || ''
+}
+
+export function getThumbnailImageUrl(img) {
+  if (!img || typeof img !== 'object') return getImageUrl(img)
+  return img.thumbnailUrl || img.compressedUrl || img.url || ''
+}
+
+export function getDisplayImageUrl(img) {
+  return getCompressedImageUrl(img)
 }
 
 export function getImageWidth(img) {
@@ -22,6 +48,27 @@ export function getImageHeight(img) {
   return img.height || null
 }
 
+export function getOriginalImageWidth(img) {
+  if (!img || typeof img !== 'object') return getImageWidth(img)
+  return img.originalWidth || img.width || null
+}
+
+export function getOriginalImageHeight(img) {
+  if (!img || typeof img !== 'object') return getImageHeight(img)
+  return img.originalHeight || img.height || null
+}
+
+export function getDisplayRatio(img) {
+  if (!img || typeof img !== 'object') return null
+  if (img.displayRatio != null) return img.displayRatio
+  const width = getImageWidth(img)
+  const height = getImageHeight(img)
+  if (width && height && height !== 0) {
+    return width / height
+  }
+  return null
+}
+
 export function isMainImage(img) {
   if (!img || typeof img !== 'object') return false
   return img.isMain === true
@@ -32,6 +79,26 @@ export function getImageSortOrder(img) {
   return img.sortOrder != null ? img.sortOrder : 0
 }
 
+export function getImageFormat(img) {
+  if (!img || typeof img !== 'object') return null
+  return img.format || null
+}
+
+export function getImageFileSize(img) {
+  if (!img || typeof img !== 'object') return null
+  return img.fileSize || null
+}
+
+export function getCompressedFileSize(img) {
+  if (!img || typeof img !== 'object') return null
+  return img.compressedFileSize || null
+}
+
+export function getProcessingStatus(img) {
+  if (!img || typeof img !== 'object') return ImageProcessingStatus.COMPLETED
+  return img.processingStatus || ImageProcessingStatus.COMPLETED
+}
+
 export function normalizeImageList(images) {
   if (!images || !Array.isArray(images)) return []
   
@@ -39,18 +106,44 @@ export function normalizeImageList(images) {
     if (typeof img === 'string') {
       return {
         url: img,
+        originalUrl: img,
+        compressedUrl: img,
+        thumbnailUrl: img,
         width: null,
         height: null,
+        originalWidth: null,
+        originalHeight: null,
         isMain: index === 0,
-        sortOrder: index
+        sortOrder: index,
+        displayRatio: null,
+        format: null,
+        fileSize: null,
+        compressedFileSize: null,
+        processingStatus: ImageProcessingStatus.COMPLETED
       }
+    }
+    const width = img.width != null ? img.width : null
+    const height = img.height != null ? img.height : null
+    let displayRatio = img.displayRatio
+    if (displayRatio == null && width && height && height !== 0) {
+      displayRatio = width / height
     }
     return {
       url: img.url || '',
-      width: img.width != null ? img.width : null,
-      height: img.height != null ? img.height : null,
+      originalUrl: img.originalUrl || img.url || '',
+      compressedUrl: img.compressedUrl || img.url || '',
+      thumbnailUrl: img.thumbnailUrl || img.compressedUrl || img.url || '',
+      width: width,
+      height: height,
+      originalWidth: img.originalWidth || width,
+      originalHeight: img.originalHeight || height,
       isMain: img.isMain != null ? img.isMain : (index === 0),
-      sortOrder: img.sortOrder != null ? img.sortOrder : index
+      sortOrder: img.sortOrder != null ? img.sortOrder : index,
+      displayRatio: displayRatio,
+      format: img.format || null,
+      fileSize: img.fileSize || null,
+      compressedFileSize: img.compressedFileSize || null,
+      processingStatus: img.processingStatus || ImageProcessingStatus.COMPLETED
     }
   })
   
