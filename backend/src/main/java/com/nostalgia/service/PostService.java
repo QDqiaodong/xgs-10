@@ -152,7 +152,7 @@ public class PostService {
         return posts;
     }
 
-    @CacheEvict(value = {"hotPosts"}, allEntries = true)
+    @CacheEvict(value = {"hotPosts", "categories", "eras"}, allEntries = true)
     @Transactional
     public Post getPostById(Long id) {
         Post post = postRepository.findById(id).orElseThrow(() -> 
@@ -166,13 +166,13 @@ public class PostService {
         return post;
     }
 
-    @CacheEvict(value = {"hotPosts", "archiveStats"}, allEntries = true)
+    @CacheEvict(value = {"hotPosts", "archiveStats", "categories", "eras"}, allEntries = true)
     @Transactional
     public Post createPost(Post post, List<MultipartFile> images) throws IOException {
         return createPost(post, images, null);
     }
 
-    @CacheEvict(value = {"hotPosts", "archiveStats"}, allEntries = true)
+    @CacheEvict(value = {"hotPosts", "archiveStats", "categories", "eras"}, allEntries = true)
     @Transactional
     public Post createPost(Post post, List<MultipartFile> images, List<TimelineEvent> timelineEvents) throws IOException {
         if (images != null && !images.isEmpty()) {
@@ -211,7 +211,7 @@ public class PostService {
         populateCategoryAndEraNames(post);
     }
 
-    @CacheEvict(value = {"hotPosts"}, allEntries = true)
+    @CacheEvict(value = {"hotPosts", "categories", "eras"}, allEntries = true)
     @Transactional
     public int regenerateAllSummaries() {
         List<Post> allPosts = postRepository.findAll();
