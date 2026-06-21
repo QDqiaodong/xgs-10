@@ -9,6 +9,7 @@ import org.hibernate.type.SqlTypes;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.nostalgia.util.PostImageListDeserializer;
+import com.nostalgia.util.SourceTypeConverter;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -55,6 +56,10 @@ public class Post {
     @Column(name = "item_source", length = 200)
     private String itemSource;
 
+    @Convert(converter = SourceTypeConverter.class)
+    @Column(name = "source_type", length = 30)
+    private SourceType sourceType;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "emotion_keywords", columnDefinition = "JSON")
     private List<String> emotionKeywords;
@@ -98,6 +103,12 @@ public class Post {
 
     @Transient
     private String eraName;
+
+    @Transient
+    private String sourceTypeName;
+
+    @Transient
+    private String sourceTypeIcon;
 
     @Transient
     private List<TimelineEvent> timelineEvents;

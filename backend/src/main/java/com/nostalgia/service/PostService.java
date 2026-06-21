@@ -6,6 +6,7 @@ import com.nostalgia.entity.Era;
 import com.nostalgia.entity.Post;
 import com.nostalgia.entity.PostImage;
 import com.nostalgia.entity.PreservationStatus;
+import com.nostalgia.entity.SourceType;
 import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.repository.CategoryRepository;
 import com.nostalgia.repository.EraRepository;
@@ -292,6 +293,10 @@ public class PostService {
                 .map(Era::getName)
                 .ifPresent(post::setEraName);
         }
+        if (post.getSourceType() != null) {
+            post.setSourceTypeName(post.getSourceType().getLabel());
+            post.setSourceTypeIcon(post.getSourceType().getIcon());
+        }
         populateStorySummary(post);
     }
 
@@ -304,6 +309,12 @@ public class PostService {
                 || post.getStorySummary().isBlank();
 
         if (!needsExtraction) {
+            if (post.getSourceType() == null && post.getItemSource() != null && !post.getItemSource().isBlank()) {
+                SourceType inferredType = SourceType.fromString(post.getItemSource());
+                if (inferredType != null) {
+                    post.setSourceType(inferredType);
+                }
+            }
             return;
         }
 
@@ -330,6 +341,13 @@ public class PostService {
 
         if (post.getStorySummary() == null || post.getStorySummary().isBlank()) {
             post.setStorySummary(result.getSummaryText());
+        }
+
+        if (post.getSourceType() == null && post.getItemSource() != null && !post.getItemSource().isBlank()) {
+            SourceType inferredType = SourceType.fromString(post.getItemSource());
+            if (inferredType != null) {
+                post.setSourceType(inferredType);
+            }
         }
     }
 

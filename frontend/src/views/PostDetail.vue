@@ -87,10 +87,16 @@
                 <span class="section-icon">📋</span>
                 <h3 class="section-title">故事摘要</h3>
               </div>
-              <div class="summary-structured" v-if="post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
-                <div class="summary-row" v-if="post.itemSource">
-                  <span class="summary-label">📦 来源</span>
-                  <span class="summary-value summary-source-value">{{ truncateForChip(post.itemSource, 60) }}</span>
+              <div class="summary-structured" v-if="post.sourceTypeName || post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
+                <div class="summary-row source-archive-row" v-if="post.sourceTypeName || post.itemSource">
+                  <span class="summary-label">� 来源档案</span>
+                  <div class="source-archive-info">
+                    <span class="source-type-badge" :style="getSourceTypeStyle(post)">
+                      <span class="source-type-icon">{{ post.sourceTypeIcon || '📦' }}</span>
+                      <span class="source-type-name">{{ post.sourceTypeName || '来源档案' }}</span>
+                    </span>
+                    <span class="source-detail-text" v-if="post.itemSource">{{ truncateForChip(post.itemSource, 60) }}</span>
+                  </div>
                 </div>
                 <div class="summary-row" v-if="post.usageScene">
                   <span class="summary-label">📍 场景</span>
@@ -164,12 +170,20 @@
                 </span>
               </div>
 
-              <div class="nameplate-row" v-if="post.itemSource">
+              <div class="nameplate-row" v-if="post.sourceTypeName || post.itemSource">
                 <span class="nameplate-label">
-                  <span class="label-icon">📦</span>
-                  物件来源
+                  <span class="label-icon">�</span>
+                  来源档案
                 </span>
-                <span class="nameplate-value">{{ post.itemSource }}</span>
+                <span class="nameplate-value">
+                  <div class="nameplate-source-archive">
+                    <span class="source-type-badge nameplate-source-badge" :style="getSourceTypeStyle(post)">
+                      <span class="source-type-icon">{{ post.sourceTypeIcon || '�' }}</span>
+                      <span class="source-type-name">{{ post.sourceTypeName || '来源档案' }}</span>
+                    </span>
+                    <span class="nameplate-source-detail" v-if="post.itemSource">{{ post.itemSource }}</span>
+                  </div>
+                </span>
               </div>
 
               <div class="nameplate-row" v-if="post.usageScene">
@@ -219,10 +233,16 @@
                 <span class="section-icon">📋</span>
                 <h3 class="section-title">故事摘要</h3>
               </div>
-              <div class="summary-structured" v-if="post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
-                <div class="summary-row" v-if="post.itemSource">
-                  <span class="summary-label">📦 来源</span>
-                  <span class="summary-value summary-source-value">{{ truncateForChip(post.itemSource, 60) }}</span>
+              <div class="summary-structured" v-if="post.sourceTypeName || post.itemSource || post.usageScene || (post.emotionKeywords && post.emotionKeywords.length > 0)">
+                <div class="summary-row source-archive-row" v-if="post.sourceTypeName || post.itemSource">
+                  <span class="summary-label">� 来源档案</span>
+                  <div class="source-archive-info">
+                    <span class="source-type-badge" :style="getSourceTypeStyle(post)">
+                      <span class="source-type-icon">{{ post.sourceTypeIcon || '📦' }}</span>
+                      <span class="source-type-name">{{ post.sourceTypeName || '来源档案' }}</span>
+                    </span>
+                    <span class="source-detail-text" v-if="post.itemSource">{{ truncateForChip(post.itemSource, 60) }}</span>
+                  </div>
                 </div>
                 <div class="summary-row" v-if="post.usageScene">
                   <span class="summary-label">📍 场景</span>
@@ -630,6 +650,27 @@ const getPreservationIcon = (status) => {
     'preservation-default': '📦'
   }
   return icons[cls] || '📦'
+}
+
+const getSourceTypeStyle = (post) => {
+  if (!post || !post.sourceTypeName) {
+    return {
+      background: 'linear-gradient(135deg, #f5f5f5, #e0e0e0)',
+      color: '#666',
+      border: '1px solid #d9d9d9'
+    }
+  }
+  const typeColors = {
+    '家庭传承': { bg: 'linear-gradient(135deg, #fff3e0, #ffe0b2)', color: '#e65100', border: '1px solid rgba(255, 111, 0, 0.3)' },
+    '旧货市场': { bg: 'linear-gradient(135deg, #fbe9e7, #ffccbc)', color: '#bf360c', border: '1px solid rgba(191, 54, 12, 0.3)' },
+    '单位留存': { bg: 'linear-gradient(135deg, #e3f2fd, #bbdefb)', color: '#0d47a1', border: '1px solid rgba(13, 71, 161, 0.3)' },
+    '童年用品': { bg: 'linear-gradient(135deg, #fce4ec, #f8bbd0)', color: '#ad1457', border: '1px solid rgba(173, 20, 87, 0.3)' }
+  }
+  return typeColors[post.sourceTypeName] || {
+    background: 'linear-gradient(135deg, #f5f5f5, #e0e0e0)',
+    color: '#666',
+    border: '1px solid #d9d9d9'
+  }
 }
 
 const loadPost = async () => {
@@ -1168,6 +1209,24 @@ const submitComment = async () => {
   border: 1px solid #ffa39e;
 }
 
+.nameplate-source-archive {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nameplate-source-badge {
+  align-self: flex-start;
+  font-size: 13px;
+  padding: 5px 14px;
+}
+
+.nameplate-source-detail {
+  font-size: 14px;
+  color: #5d4e37;
+  line-height: 1.6;
+}
+
 .preservation-default {
   background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
   color: #595959;
@@ -1371,6 +1430,43 @@ const submitComment = async () => {
   padding: 4px 14px;
   border-radius: 16px;
   border: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+.source-archive-row {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-archive-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.source-type-icon {
+  font-size: 16px;
+}
+
+.source-type-name {
+  letter-spacing: 1px;
+}
+
+.source-detail-text {
+  font-size: 13px;
+  color: #6b5b47;
+  line-height: 1.6;
+  padding-left: 4px;
 }
 
 .summary-emotion-tags {

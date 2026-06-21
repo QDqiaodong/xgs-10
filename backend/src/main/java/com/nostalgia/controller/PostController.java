@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nostalgia.entity.Post;
 import com.nostalgia.entity.PreservationStatus;
+import com.nostalgia.entity.SourceType;
 import com.nostalgia.entity.TimelineEvent;
 import com.nostalgia.service.PostService;
 import com.nostalgia.util.PaginationUtils;
@@ -62,6 +63,8 @@ public class PostController {
             @RequestParam(required = false) String preservationStatus,
             @RequestParam(required = false) String usageScene,
             @RequestParam(required = false) String storySummary,
+            @RequestParam(required = false) String itemSource,
+            @RequestParam(required = false) String sourceType,
             @RequestParam Long categoryId,
             @RequestParam Long eraId,
             @RequestParam(required = false) String authorName,
@@ -86,6 +89,11 @@ public class PostController {
         post.setPreservationStatus(preservationStatus != null && !preservationStatus.isBlank() ? preservationStatus.trim() : null);
         post.setUsageScene(usageScene != null && !usageScene.isBlank() ? usageScene.trim() : null);
         post.setStorySummary(storySummary != null && !storySummary.isBlank() ? storySummary.trim() : null);
+        post.setItemSource(itemSource != null && !itemSource.isBlank() ? itemSource.trim() : null);
+        if (sourceType != null && !sourceType.isBlank()) {
+            SourceType type = SourceType.fromString(sourceType.trim());
+            post.setSourceType(type);
+        }
         post.setCategoryId(categoryId);
         post.setEraId(eraId);
         post.setAuthorName(authorName != null && !authorName.isBlank() ? authorName.trim() : "匿名用户");
@@ -103,6 +111,11 @@ public class PostController {
     @GetMapping("/preservation-statuses")
     public ResponseEntity<List<PreservationStatus>> getPreservationStatuses() {
         return ResponseEntity.ok(PreservationStatus.getAllStatuses());
+    }
+
+    @GetMapping("/source-types")
+    public ResponseEntity<List<SourceType>> getSourceTypes() {
+        return ResponseEntity.ok(SourceType.getAllTypes());
     }
 
     @PostMapping("/regenerate-summaries")

@@ -107,6 +107,7 @@
               />
             </div>
           </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>你的昵称</label>
@@ -117,6 +118,30 @@
               />
             </div>
           </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="section-title">📦 来源档案</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>来源类型</label>
+              <select v-model="form.sourceType">
+                <option value="">请选择来源类型</option>
+                <option v-for="type in sourceTypes" :key="type.name" :value="type.name">
+                  {{ type.icon }} {{ type.label }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>来源详情</label>
+              <input
+                v-model="form.itemSource"
+                type="text"
+                placeholder="例如：爷爷在县城百货大楼购买 / 从旧货市场淘来"
+              />
+            </div>
+          </div>
+          <p class="form-hint">选择物件的来源类型，可补充详细的来源描述，让档案更完整</p>
         </div>
 
         <div class="form-section">
@@ -282,6 +307,7 @@ const router = useRouter()
 
 const categories = ref([])
 const eras = ref([])
+const sourceTypes = ref([])
 const previewImages = ref([])
 const selectedFiles = ref([])
 const submitting = ref(false)
@@ -296,6 +322,8 @@ const form = reactive({
   preservationStatus: '',
   usageScene: '',
   storySummary: '',
+  itemSource: '',
+  sourceType: '',
   content: '',
   story: '',
   memory: '',
@@ -362,6 +390,15 @@ const loadEras = async () => {
     eras.value = res.data
   } catch (e) {
     console.error('加载年代失败', e)
+  }
+}
+
+const loadSourceTypes = async () => {
+  try {
+    const res = await postsAPI.getSourceTypes()
+    sourceTypes.value = res.data
+  } catch (e) {
+    console.error('加载来源类型失败', e)
   }
 }
 
@@ -440,6 +477,8 @@ const handleSubmit = async () => {
     if (form.preservationStatus) formData.append('preservationStatus', form.preservationStatus)
     if (form.usageScene) formData.append('usageScene', form.usageScene)
     if (form.storySummary) formData.append('storySummary', form.storySummary)
+    if (form.itemSource) formData.append('itemSource', form.itemSource)
+    if (form.sourceType) formData.append('sourceType', form.sourceType)
     formData.append('content', form.content)
     if (form.story) formData.append('story', form.story)
     if (form.memory) formData.append('memory', form.memory)
@@ -476,6 +515,7 @@ const handleSubmit = async () => {
 onMounted(() => {
   loadCategories()
   loadEras()
+  loadSourceTypes()
 })
 </script>
 

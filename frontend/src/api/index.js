@@ -25,7 +25,8 @@ export const postsAPI = {
   create: (formData) => api.post('/posts', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  getPreservationStatuses: () => api.get('/posts/preservation-statuses')
+  getPreservationStatuses: () => api.get('/posts/preservation-statuses'),
+  getSourceTypes: () => api.get('/posts/source-types')
 }
 
 export const commentsAPI = {
