@@ -91,11 +91,9 @@
               <label>保存状态</label>
               <select v-model="form.preservationStatus">
                 <option value="">请选择保存状态</option>
-                <option value="完好保存">✨ 完好保存</option>
-                <option value="功能正常">✅ 功能正常</option>
-                <option value="略有磨损">🔶 略有磨损</option>
-                <option value="略有锈迹">🟠 略有锈迹</option>
-                <option value="破损待修">🔴 破损待修</option>
+                <option v-for="status in preservationStatuses" :key="status.label" :value="status.label">
+                  {{ status.icon }} {{ status.label }}
+                </option>
               </select>
             </div>
             <div class="form-group">
@@ -302,12 +300,14 @@ import { processImage, createImagePreview } from '../utils/imageProcessor'
 import { cleanItemName, cleanTitle } from '../utils/textCleaner'
 import { getCategoryIcon } from '../icons/categories'
 import { getEraCategoryWarning } from '../utils/eraUtils'
+import { getAllStatuses, getStatusConfig } from '../utils/preservationStatus'
 
 const router = useRouter()
 
 const categories = ref([])
 const eras = ref([])
 const sourceTypes = ref([])
+const preservationStatuses = ref([])
 const previewImages = ref([])
 const selectedFiles = ref([])
 const submitting = ref(false)
@@ -399,6 +399,23 @@ const loadSourceTypes = async () => {
     sourceTypes.value = res.data
   } catch (e) {
     console.error('加载来源类型失败', e)
+  }
+}
+
+const loadPreservationStatuses = async () => {
+  try {
+    const res = await postsAPI.getPreservationStatuses()
+    if (res.data && res.data.length > 0) {
+      preservationStatuses.value = res.data.map(item => ({
+        ...item,
+        ...getStatusConfig(item.label)
+      }))
+    } else {
+      preservationStatuses.value = getAllStatuses()
+    }
+  } catch (e) {
+    console.error('加载保存状态失败，使用本地配置', e)
+    preservationStatuses.value = getAllStatuses()
   }
 }
 
@@ -516,6 +533,7 @@ onMounted(() => {
   loadCategories()
   loadEras()
   loadSourceTypes()
+  loadPreservationStatuses()
 })
 </script>
 

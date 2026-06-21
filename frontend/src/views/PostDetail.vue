@@ -196,12 +196,15 @@
 
               <div class="nameplate-row" v-if="post.preservationStatus">
                 <span class="nameplate-label">
-                  <span class="label-icon">✨</span>
+                  <span class="label-icon">{{ getStatusConfig(post.preservationStatus).icon }}</span>
                   保存状态
                 </span>
                 <span class="nameplate-value">
-                  <span :class="['preservation-badge', getPreservationClass(post.preservationStatus)]">
-                    <span class="status-icon">{{ getPreservationIcon(post.preservationStatus) }}</span>
+                  <span
+                    class="preservation-badge"
+                    :style="getPreservationBadgeStyle(post.preservationStatus)"
+                  >
+                    <span class="status-icon">{{ getStatusConfig(post.preservationStatus).icon }}</span>
                     {{ post.preservationStatus }}
                   </span>
                 </span>
@@ -688,6 +691,7 @@ import {
 } from '../utils/imageLayout'
 import { getCategoryClass, getCategoryStyleVars } from '../icons/categoryUtils'
 import { normalizeEraName, getEraClass } from '../utils/eraUtils'
+import { getStatusConfig } from '../utils/preservationStatus'
 import CategoryIcon from '../components/CategoryIcon.vue'
 
 const route = useRoute()
@@ -1060,26 +1064,13 @@ const getEventTagClass = (type) => {
   return 'tag-default'
 }
 
-const getPreservationClass = (status) => {
-  if (!status) return 'preservation-default'
-  const s = status.toLowerCase()
-  if (s.includes('完好') || s.includes('完美') || s.includes('新')) return 'preservation-excellent'
-  if (s.includes('正常') || s.includes('良好') || s.includes('功能')) return 'preservation-good'
-  if (s.includes('锈') || s.includes('磨损') || s.includes('旧')) return 'preservation-worn'
-  if (s.includes('破损') || s.includes('坏') || s.includes('故障')) return 'preservation-damaged'
-  return 'preservation-default'
-}
-
-const getPreservationIcon = (status) => {
-  const cls = getPreservationClass(status)
-  const icons = {
-    'preservation-excellent': '✨',
-    'preservation-good': '✅',
-    'preservation-worn': '🔶',
-    'preservation-damaged': '🔴',
-    'preservation-default': '📦'
+const getPreservationBadgeStyle = (status) => {
+  const config = getStatusConfig(status)
+  return {
+    background: config.bgGradient,
+    color: config.color,
+    border: `1px solid ${config.borderColor}`
   }
-  return icons[cls] || '📦'
 }
 
 const getSourceTypeStyle = (post) => {

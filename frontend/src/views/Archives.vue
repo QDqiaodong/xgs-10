@@ -422,8 +422,8 @@
               :alt="item.itemName"
               class="item-image"
             />
-            <div :class="['preservation-badge', getPreservationClass(item.preservationStatus)]">
-              {{ item.preservationStatus || '待评估' }}
+            <div class="preservation-badge" :style="getPreservationBadgeStyle(item.preservationStatus)">
+              {{ getStatusIcon(item.preservationStatus) }} {{ item.preservationStatus || '待评估' }}
             </div>
           </div>
           <div class="item-content">
@@ -579,14 +579,10 @@ const getStatusIcon = (statusLabel) => {
 const getPreservationBadgeStyle = (statusLabel) => {
   const config = getStatusConfig(statusLabel)
   return {
-    background: config.color,
-    color: '#fff',
+    background: config.bgGradient,
+    color: config.color,
     border: `1px solid ${config.borderColor}`
   }
-}
-
-const getPreservationClass = (statusLabel) => {
-  return `preservation-${getStatusConfig(statusLabel).key || 'default'}`
 }
 
 const parseCategories = (catStr) => {
