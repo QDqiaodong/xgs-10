@@ -112,4 +112,7 @@ public class Post {
 
     @Transient
     private List<TimelineEvent> timelineEvents;
+
+    @Transient
+    private List<RestorationRecord> restorationRecords;
 }

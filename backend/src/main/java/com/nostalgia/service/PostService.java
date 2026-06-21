@@ -8,10 +8,12 @@ import com.nostalgia.entity.PostImage;
 import com.nostalgia.entity.PreservationStatus;
 import com.nostalgia.entity.SourceType;
 import com.nostalgia.entity.TimelineEvent;
+import com.nostalgia.entity.RestorationRecord;
 import com.nostalgia.repository.CategoryRepository;
 import com.nostalgia.repository.EraRepository;
 import com.nostalgia.repository.PostRepository;
 import com.nostalgia.repository.TimelineEventRepository;
+import com.nostalgia.repository.RestorationRecordRepository;
 import com.nostalgia.util.ImageInfo;
 import com.nostalgia.util.StorySummaryExtractor;
 import com.nostalgia.util.TextCleaner;
@@ -49,6 +51,7 @@ public class PostService {
     private final CategoryRepository categoryRepository;
     private final EraRepository eraRepository;
     private final TimelineEventRepository timelineEventRepository;
+    private final RestorationRecordRepository restorationRecordRepository;
     private final ImageProcessingService imageProcessingService;
 
     private final String uploadPath = "/app/uploads";
@@ -163,6 +166,7 @@ public class PostService {
         post.setViewCount((post.getViewCount() == null ? 0 : post.getViewCount()) + 1);
         populateCategoryAndEraNames(post);
         populateTimelineEvents(post);
+        populateRestorationRecords(post);
         normalizeImages(post);
         normalizePreservationStatus(post);
         return post;
@@ -364,6 +368,15 @@ public class PostService {
             post.setTimelineEvents(events);
         } catch (Exception e) {
             post.setTimelineEvents(java.util.Collections.emptyList());
+        }
+    }
+
+    private void populateRestorationRecords(Post post) {
+        try {
+            List<RestorationRecord> records = restorationRecordRepository.findByPostIdOrderByRestorationDateAscSortOrderAsc(post.getId());
+            post.setRestorationRecords(records);
+        } catch (Exception e) {
+            post.setRestorationRecords(java.util.Collections.emptyList());
         }
     }
 

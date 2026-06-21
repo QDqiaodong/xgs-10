@@ -45,6 +45,14 @@ export const timelineAPI = {
   create: (data) => api.post('/timeline', data)
 }
 
+export const restorationAPI = {
+  getByPost: (postId) => api.get(`/restoration/post/${postId}`),
+  getById: (id) => api.get(`/restoration/${id}`),
+  create: (data) => api.post('/restoration', data),
+  update: (id, data) => api.put(`/restoration/${id}`, data),
+  delete: (id) => api.delete(`/restoration/${id}`)
+}
+
 export const archivesAPI = {
   getList: (params) => api.get('/archives', { params }),
   getGrouped: (params) => api.get('/archives/grouped', { params }),

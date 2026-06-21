@@ -139,3 +139,37 @@ INSERT INTO timeline_events (post_id, event_type, event_date, title, description
 (3, 'USAGE', '1995-05-04', '五四晚会', '班级五四晚会用它伴奏，成为晚会的明星设备。', '学校教室', 2),
 (3, 'IDLE', '2000-03-15', 'MP3时代', 'MP3开始流行，录音机被闲置在衣柜顶上。', '衣柜顶', 3),
 (3, 'DISPOSAL', '2018-10-01', '送给侄儿', '侄儿对老物件感兴趣，送给了他继续收藏。', '侄儿家', 4);
+
+CREATE TABLE IF NOT EXISTS restoration_records (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    post_id BIGINT NOT NULL,
+    restoration_type ENUM('CLEANING', 'REPLACEMENT', 'RUST_REMOVAL', 'RENOVATION', 'PAINTING', 'REPAIR', 'MAINTENANCE', 'POLISHING', 'WOOD_TREATMENT', 'ELECTRONIC_REPAIR', 'CUSTOM') NOT NULL,
+    custom_type VARCHAR(50),
+    restoration_date DATE NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    description TEXT,
+    before_image VARCHAR(500),
+    after_image VARCHAR(500),
+    materials VARCHAR(500),
+    cost DECIMAL(10, 2),
+    restorer VARCHAR(100),
+    notes TEXT,
+    preservation_status_before VARCHAR(50),
+    preservation_status_after VARCHAR(50),
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_post_id (post_id),
+    INDEX idx_restoration_date (restoration_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO restoration_records (post_id, restoration_type, restoration_date, title, description, before_image, after_image, materials, cost, restorer, notes, preservation_status_before, preservation_status_after, sort_order) VALUES
+(1, 'CLEANING', '1990-05-10', '外壳清洁除尘', '使用软毛刷和酒精棉仔细清洁电视机外壳，清除多年积尘。', 'https://picsum.photos/seed/tv_before1/400/300', 'https://picsum.photos/seed/tv_after1/400/300', '软毛刷,医用酒精,脱脂棉', 5.00, '父亲', '注意不要让液体流入电路部分。', '外壳积尘严重', '外壳清洁如新', 0),
+(1, 'ELECTRONIC_REPAIR', '1993-08-15', '更换显像管座', '电视出现图像模糊、开机模糊等问题，更换显像管座后恢复正常。', 'https://picsum.photos/seed/tv_before2/400/300', 'https://picsum.photos/seed/tv_after2/400/300', '显像管座,电烙铁,焊锡', 25.00, '县城维修店王师傅', '更换后需要预热5分钟才能达到最佳效果。', '图像模糊,开机慢', '图像清晰,开机正常', 1),
+(1, 'MAINTENANCE', '1998-02-20', '电路板检修保养', '对电路板进行全面检修，更换老化电容，补焊虚焊点。', 'https://picsum.photos/seed/tv_before3/400/300', 'https://picsum.photos/seed/tv_after3/400/300', '电解电容,松香,吸锡器', 40.00, '表哥', '发现3个电容鼓包，全部更换。', '偶尔黑屏,有杂音', '运行稳定,声音清晰', 2),
+(2, 'RUST_REMOVAL', '2010-07-08', '铁皮除锈处理', '铁皮青蛙表面出现锈迹，使用除锈剂进行专业除锈处理。', 'https://picsum.photos/seed/frog_before1/400/300', 'https://picsum.photos/seed/frog_after1/400/300', 'WD-40除锈剂,细砂纸,防锈油', 30.00, '自己动手', '除锈后涂抹防锈油防止再次生锈。', '表面多处锈迹,漆面脱落', '锈迹清除,表面光滑', 0),
+(2, 'PAINTING', '2015-04-12', '重新喷漆上色', '按照原配色方案重新喷漆，恢复玩具的鲜艳色彩。', 'https://picsum.photos/seed/frog_before2/400/300', 'https://picsum.photos/seed/frog_after2/400/300', '环保喷漆,遮盖胶带,细砂纸', 50.00, '模型店张师傅', '使用了专门的模型漆，颜色与原版几乎一致。', '漆面严重褪色', '色彩鲜艳,恢复原貌', 1),
+(2, 'REPLACEMENT', '2020-05-20', '更换发条弹簧', '原发条弹性减弱，跳跃无力，更换全新不锈钢发条。', 'https://picsum.photos/seed/frog_before3/400/300', 'https://picsum.photos/seed/frog_after3/400/300', '不锈钢发条,钟表螺丝刀,镊子', 20.00, '钟表维修店', '更换后跳跃距离达到3米以上。', '跳跃无力,上弦打滑', '跳跃有力,功能正常', 2),
+(3, 'CLEANING', '2005-03-18', '磁头清洁保养', '播放磁带声音发闷，使用专用清洁带清洁磁头。', 'https://picsum.photos/seed/radio_before1/400/300', 'https://picsum.photos/seed/radio_after1/400/300', '磁头清洁带,无水酒精', 15.00, '自己动手', '定期清洁磁头可以延长磁带和机器寿命。', '声音发闷,高音丢失', '声音清晰,高音恢复', 0),
+(3, 'REPLACEMENT', '2012-09-25', '更换传动皮带', '走带速度不稳，声音变调，更换全新橡胶传动皮带。', 'https://picsum.photos/seed/radio_before2/400/300', 'https://picsum.photos/seed/radio_after2/400/300', '橡胶传动皮带,十字螺丝刀', 35.00, '电器维修店', '旧皮带已经老化开裂，必须更换。', '走带不稳,音调忽高忽低', '走带平稳,音调准确', 1),
+(3, 'RENOVATION', '2019-11-10', '整机翻新调试', '全面拆解清洗，更换所有老化元件，重新调试机芯。', 'https://picsum.photos/seed/radio_before3/400/300', 'https://picsum.photos/seed/radio_after3/400/300', '电位器,开关,电容,润滑油', 180.00, '专业古董电器修复师', '耗时一周，更换了12个电子元件。', '多处按键失灵,收音效果差', '功能完好,堪比新机', 2);

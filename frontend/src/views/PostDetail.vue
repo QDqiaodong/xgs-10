@@ -366,6 +366,99 @@
                 </div>
               </div>
             </div>
+
+            <div class="content-section" v-if="post.restorationRecords && post.restorationRecords.length > 0">
+              <div class="section-header">
+                <span class="section-icon">🔧</span>
+                <h3 class="section-title">修复记录</h3>
+                <button class="add-restoration-btn" @click="openRestorationModal">
+                  <span class="btn-icon">+</span> 添加修复记录
+                </button>
+              </div>
+              <div class="restoration-timeline">
+                <div
+                  v-for="(record, idx) in post.restorationRecords"
+                  :key="record.id"
+                  class="restoration-item"
+                >
+                  <div class="restoration-line" v-if="idx < post.restorationRecords.length - 1"></div>
+                  <div :class="['restoration-dot', getRestorationTypeClass(record.restorationType)]">
+                    <span class="dot-icon">{{ getRestorationTypeIcon(record.restorationType) }}</span>
+                  </div>
+                  <div class="restoration-content">
+                    <div class="restoration-header">
+                      <span :class="['restoration-tag', getRestorationTypeClass(record.restorationType)]">
+                        {{ getRestorationTypeLabel(record.restorationType, record.customType) }}
+                      </span>
+                      <span class="restoration-date">{{ formatRestorationDate(record.restorationDate) }}</span>
+                    </div>
+                    <div class="restoration-title-row">
+                      <h4 class="restoration-title">{{ record.title }}</h4>
+                      <button class="delete-restoration-btn" @click="deleteRestorationRecord(record.id)" title="删除记录">
+                        🗑️
+                      </button>
+                    </div>
+                    <p class="restoration-desc" v-if="record.description">{{ record.description }}</p>
+
+                    <div class="restoration-images" v-if="record.beforeImage || record.afterImage">
+                      <div class="restoration-image-wrapper" v-if="record.beforeImage">
+                        <span class="image-label">修复前</span>
+                        <img :src="record.beforeImage" alt="修复前" class="restoration-image" />
+                      </div>
+                      <div class="restoration-image-wrapper" v-if="record.afterImage">
+                        <span class="image-label">修复后</span>
+                        <img :src="record.afterImage" alt="修复后" class="restoration-image" />
+                      </div>
+                    </div>
+
+                    <div class="restoration-meta">
+                      <div class="meta-item" v-if="record.materials">
+                        <span class="meta-label">🧰 材料：</span>
+                        <span class="meta-value">{{ record.materials }}</span>
+                      </div>
+                      <div class="meta-item" v-if="record.cost">
+                        <span class="meta-label">💰 费用：</span>
+                        <span class="meta-value">¥{{ record.cost.toFixed(2) }}</span>
+                      </div>
+                      <div class="meta-item" v-if="record.restorer">
+                        <span class="meta-label">👤 修复人：</span>
+                        <span class="meta-value">{{ record.restorer }}</span>
+                      </div>
+                    </div>
+
+                    <div class="restoration-status" v-if="record.preservationStatusBefore || record.preservationStatusAfter">
+                      <div class="status-transition">
+                        <span v-if="record.preservationStatusBefore" class="status-before">
+                          {{ record.preservationStatusBefore }}
+                        </span>
+                        <span class="status-arrow" v-if="record.preservationStatusBefore && record.preservationStatusAfter">→</span>
+                        <span v-if="record.preservationStatusAfter" class="status-after">
+                          {{ record.preservationStatusAfter }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p class="restoration-notes" v-if="record.notes">
+                      📝 {{ record.notes }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="content-section" v-if="!post.restorationRecords || post.restorationRecords.length === 0">
+              <div class="section-header">
+                <span class="section-icon">🔧</span>
+                <h3 class="section-title">修复记录</h3>
+                <button class="add-restoration-btn" @click="openRestorationModal">
+                  <span class="btn-icon">+</span> 添加修复记录
+                </button>
+              </div>
+              <div class="empty-restoration">
+                <p class="empty-icon">🔧</p>
+                <p class="empty-text">暂无修复记录，记录下老物件的修复历程吧~</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -419,6 +512,161 @@
         暂无留言，来说说你的回忆吧~
       </div>
     </section>
+
+    <div class="modal-overlay" v-if="showRestorationModal" @click.self="closeRestorationModal">
+      <div class="modal-content restoration-modal">
+        <div class="modal-header">
+          <h3 class="modal-title">🔧 添加修复记录</h3>
+          <button class="modal-close" @click="closeRestorationModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label class="form-label">修复类型 *</label>
+            <div class="restoration-type-grid">
+              <div
+                v-for="type in restorationTypes"
+                :key="type.value"
+                :class="['type-option', { active: restorationForm.restorationType === type.value }]"
+                @click="restorationForm.restorationType = type.value"
+              >
+                <span class="type-icon">{{ type.icon }}</span>
+                <span class="type-label">{{ type.label }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row" v-if="restorationForm.restorationType === 'CUSTOM'">
+            <label class="form-label">自定义类型 *</label>
+            <input
+              v-model="restorationForm.customType"
+              type="text"
+              class="form-input"
+              placeholder="请输入自定义修复类型"
+            />
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">修复日期 *</label>
+            <input
+              v-model="restorationForm.restorationDate"
+              type="date"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">记录标题 *</label>
+            <input
+              v-model="restorationForm.title"
+              type="text"
+              class="form-input"
+              placeholder="简要描述这次修复工作"
+            />
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">详细描述</label>
+            <textarea
+              v-model="restorationForm.description"
+              class="form-textarea"
+              rows="3"
+              placeholder="详细描述修复过程、遇到的问题等"
+            ></textarea>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">修复前图片URL</label>
+              <input
+                v-model="restorationForm.beforeImage"
+                type="text"
+                class="form-input"
+                placeholder="https://..."
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">修复后图片URL</label>
+              <input
+                v-model="restorationForm.afterImage"
+                type="text"
+                class="form-input"
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">使用材料</label>
+            <input
+              v-model="restorationForm.materials"
+              type="text"
+              class="form-input"
+              placeholder="例如：WD-40除锈剂、细砂纸、防锈油"
+            />
+          </div>
+
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">修复费用 (元)</label>
+              <input
+                v-model="restorationForm.cost"
+                type="number"
+                step="0.01"
+                min="0"
+                class="form-input"
+                placeholder="0.00"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">修复人</label>
+              <input
+                v-model="restorationForm.restorer"
+                type="text"
+                class="form-input"
+                placeholder="例如：自己动手 / 张师傅"
+              />
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">修复前状态</label>
+              <input
+                v-model="restorationForm.preservationStatusBefore"
+                type="text"
+                class="form-input"
+                placeholder="例如：多处锈迹、漆面脱落"
+              />
+            </div>
+            <div class="form-row">
+              <label class="form-label">修复后状态</label>
+              <input
+                v-model="restorationForm.preservationStatusAfter"
+                type="text"
+                class="form-input"
+                placeholder="例如：锈迹清除、表面光滑"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">备注</label>
+            <textarea
+              v-model="restorationForm.notes"
+              class="form-textarea"
+              rows="2"
+              placeholder="修复心得、注意事项等"
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeRestorationModal">取消</button>
+          <button class="btn btn-primary" @click="submitRestorationRecord" :disabled="!restorationForm.title.trim() || !restorationForm.restorationDate">
+            保存记录
+          </button>
+        </div>
+      </div>
+    </div>
     </div>
   </div>
 </template>
@@ -426,7 +674,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { postsAPI, commentsAPI, favoritesAPI } from '../api'
+import { postsAPI, commentsAPI, favoritesAPI, restorationAPI } from '../api'
 import { getSessionId } from '../utils/session'
 import { displayItemName, buildDetailSummary, shouldCollapseStory, truncateForDetailSummary, truncateForChip } from '../utils/textCleaner'
 import { 
@@ -461,6 +709,36 @@ const loading = ref(true)
 const notFound = ref(false)
 const error = ref(false)
 const errorMessage = ref('')
+const showRestorationModal = ref(false)
+const restorationRecords = ref([])
+const restorationForm = ref({
+  restorationType: 'CLEANING',
+  customType: '',
+  restorationDate: '',
+  title: '',
+  description: '',
+  beforeImage: '',
+  afterImage: '',
+  materials: '',
+  cost: '',
+  restorer: '',
+  notes: '',
+  preservationStatusBefore: '',
+  preservationStatusAfter: ''
+})
+const restorationTypes = [
+  { value: 'CLEANING', label: '清洁', icon: '🧹' },
+  { value: 'REPLACEMENT', label: '补件', icon: '🔧' },
+  { value: 'RUST_REMOVAL', label: '除锈', icon: '✨' },
+  { value: 'RENOVATION', label: '翻新', icon: '🆕' },
+  { value: 'PAINTING', label: '上漆', icon: '🎨' },
+  { value: 'REPAIR', label: '维修', icon: '🔨' },
+  { value: 'MAINTENANCE', label: '保养', icon: '💧' },
+  { value: 'POLISHING', label: '抛光', icon: '💎' },
+  { value: 'WOOD_TREATMENT', label: '木艺处理', icon: '🪵' },
+  { value: 'ELECTRONIC_REPAIR', label: '电子维修', icon: '⚡' },
+  { value: 'CUSTOM', label: '自定义', icon: '📝' }
+]
 
 const toggleLayer = (key) => {
   expandedLayers.value[key] = !expandedLayers.value[key]
@@ -506,6 +784,156 @@ const resetState = () => {
   notFound.value = false
   error.value = false
   errorMessage.value = ''
+  restorationRecords.value = []
+}
+
+const getRestorationTypeIcon = (type) => {
+  const icons = {
+    CLEANING: '🧹',
+    REPLACEMENT: '🔧',
+    RUST_REMOVAL: '✨',
+    RENOVATION: '🆕',
+    PAINTING: '🎨',
+    REPAIR: '🔨',
+    MAINTENANCE: '💧',
+    POLISHING: '💎',
+    WOOD_TREATMENT: '🪵',
+    ELECTRONIC_REPAIR: '⚡',
+    CUSTOM: '📝'
+  }
+  return icons[type] || '🔧'
+}
+
+const getRestorationTypeLabel = (type, customType) => {
+  if (type === 'CUSTOM' && customType) {
+    return customType
+  }
+  const labels = {
+    CLEANING: '清洁',
+    REPLACEMENT: '补件',
+    RUST_REMOVAL: '除锈',
+    RENOVATION: '翻新',
+    PAINTING: '上漆',
+    REPAIR: '维修',
+    MAINTENANCE: '保养',
+    POLISHING: '抛光',
+    WOOD_TREATMENT: '木艺处理',
+    ELECTRONIC_REPAIR: '电子维修',
+    CUSTOM: '自定义'
+  }
+  return labels[type] || '修复'
+}
+
+const getRestorationTypeClass = (type) => {
+  const classes = {
+    CLEANING: 'restoration-cleaning',
+    REPLACEMENT: 'restoration-replacement',
+    RUST_REMOVAL: 'restoration-rust',
+    RENOVATION: 'restoration-renovation',
+    PAINTING: 'restoration-painting',
+    REPAIR: 'restoration-repair',
+    MAINTENANCE: 'restoration-maintenance',
+    POLISHING: 'restoration-polishing',
+    WOOD_TREATMENT: 'restoration-wood',
+    ELECTRONIC_REPAIR: 'restoration-electronic',
+    CUSTOM: 'restoration-custom'
+  }
+  return classes[type] || 'restoration-default'
+}
+
+const formatRestorationDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+const openRestorationModal = () => {
+  restorationForm.value = {
+    restorationType: 'CLEANING',
+    customType: '',
+    restorationDate: new Date().toISOString().split('T')[0],
+    title: '',
+    description: '',
+    beforeImage: '',
+    afterImage: '',
+    materials: '',
+    cost: '',
+    restorer: '',
+    notes: '',
+    preservationStatusBefore: '',
+    preservationStatusAfter: ''
+  }
+  showRestorationModal.value = true
+}
+
+const closeRestorationModal = () => {
+  showRestorationModal.value = false
+}
+
+const submitRestorationRecord = async () => {
+  if (!restorationForm.value.title.trim()) {
+    alert('请输入修复记录标题')
+    return
+  }
+  if (!restorationForm.value.restorationDate) {
+    alert('请选择修复日期')
+    return
+  }
+
+  try {
+    const formData = {
+      postId: postId.value,
+      restorationType: restorationForm.value.restorationType,
+      customType: restorationForm.value.restorationType === 'CUSTOM' ? restorationForm.value.customType : null,
+      restorationDate: restorationForm.value.restorationDate,
+      title: restorationForm.value.title.trim(),
+      description: restorationForm.value.description.trim() || null,
+      beforeImage: restorationForm.value.beforeImage.trim() || null,
+      afterImage: restorationForm.value.afterImage.trim() || null,
+      materials: restorationForm.value.materials.trim() || null,
+      cost: restorationForm.value.cost ? parseFloat(restorationForm.value.cost) : null,
+      restorer: restorationForm.value.restorer.trim() || null,
+      notes: restorationForm.value.notes.trim() || null,
+      preservationStatusBefore: restorationForm.value.preservationStatusBefore.trim() || null,
+      preservationStatusAfter: restorationForm.value.preservationStatusAfter.trim() || null,
+      sortOrder: restorationRecords.value.length
+    }
+
+    await restorationAPI.create(formData)
+    closeRestorationModal()
+    loadRestorationRecords()
+    loadPost()
+  } catch (e) {
+    console.error('提交修复记录失败', e)
+    alert('提交失败，请稍后重试')
+  }
+}
+
+const deleteRestorationRecord = async (id) => {
+  if (!confirm('确定要删除这条修复记录吗？')) {
+    return
+  }
+  try {
+    await restorationAPI.delete(id)
+    loadRestorationRecords()
+    loadPost()
+  } catch (e) {
+    console.error('删除修复记录失败', e)
+    alert('删除失败，请稍后重试')
+  }
+}
+
+const loadRestorationRecords = async () => {
+  try {
+    const res = await restorationAPI.getByPost(postId.value)
+    restorationRecords.value = res.data || []
+  } catch (e) {
+    console.error('加载修复记录失败', e)
+  }
 }
 
 watch(postId, () => {
@@ -513,6 +941,7 @@ watch(postId, () => {
   loadPost()
   loadComments()
   checkFavorite()
+  loadRestorationRecords()
 })
 
 onMounted(() => {
@@ -521,6 +950,7 @@ onMounted(() => {
   loadPost()
   loadComments()
   checkFavorite()
+  loadRestorationRecords()
 })
 
 onBeforeUnmount(() => {
@@ -1965,6 +2395,569 @@ const submitComment = async () => {
 
   .form-actions input {
     max-width: none;
+  }
+}
+
+.add-restoration-btn {
+  margin-left: auto;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s;
+}
+
+.add-restoration-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+}
+
+.add-restoration-btn .btn-icon {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.restoration-timeline {
+  position: relative;
+  padding-left: 44px;
+}
+
+.restoration-item {
+  position: relative;
+  padding-bottom: 28px;
+}
+
+.restoration-item:last-child {
+  padding-bottom: 0;
+}
+
+.restoration-line {
+  position: absolute;
+  left: 15px;
+  top: 40px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #52c41a 0%, #95de64 100%);
+}
+
+.restoration-dot {
+  position: absolute;
+  left: -44px;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.restoration-dot.restoration-cleaning {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+}
+
+.restoration-dot.restoration-replacement {
+  background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+}
+
+.restoration-dot.restoration-rust {
+  background: linear-gradient(135deg, #fa8c16 0%, #d46b08 100%);
+}
+
+.restoration-dot.restoration-renovation {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.restoration-dot.restoration-painting {
+  background: linear-gradient(135deg, #eb2f96 0%, #c41d7f 100%);
+}
+
+.restoration-dot.restoration-repair {
+  background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+}
+
+.restoration-dot.restoration-maintenance {
+  background: linear-gradient(135deg, #13c2c2 0%, #08979c 100%);
+}
+
+.restoration-dot.restoration-polishing {
+  background: linear-gradient(135deg, #2f54eb 0%, #1d39c4 100%);
+}
+
+.restoration-dot.restoration-wood {
+  background: linear-gradient(135deg, #a0d911 0%, #7cb305 100%);
+}
+
+.restoration-dot.restoration-electronic {
+  background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
+}
+
+.restoration-dot.restoration-custom {
+  background: linear-gradient(135deg, #8c8c8c 0%, #595959 100%);
+}
+
+.restoration-dot.restoration-default {
+  background: linear-gradient(135deg, #8c8c8c 0%, #595959 100%);
+}
+
+.restoration-content {
+  background: linear-gradient(135deg, #f6ffed 0%, #fcffe6 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
+  border-left: 3px solid #52c41a;
+  transition: all 0.3s;
+}
+
+.restoration-content:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.1);
+}
+
+.restoration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.restoration-tag {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.restoration-tag.restoration-cleaning {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+}
+
+.restoration-tag.restoration-replacement {
+  background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+}
+
+.restoration-tag.restoration-rust {
+  background: linear-gradient(135deg, #fa8c16 0%, #d46b08 100%);
+}
+
+.restoration-tag.restoration-renovation {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.restoration-tag.restoration-painting {
+  background: linear-gradient(135deg, #eb2f96 0%, #c41d7f 100%);
+}
+
+.restoration-tag.restoration-repair {
+  background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+}
+
+.restoration-tag.restoration-maintenance {
+  background: linear-gradient(135deg, #13c2c2 0%, #08979c 100%);
+}
+
+.restoration-tag.restoration-polishing {
+  background: linear-gradient(135deg, #2f54eb 0%, #1d39c4 100%);
+}
+
+.restoration-tag.restoration-wood {
+  background: linear-gradient(135deg, #a0d911 0%, #7cb305 100%);
+}
+
+.restoration-tag.restoration-electronic {
+  background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
+}
+
+.restoration-tag.restoration-custom {
+  background: linear-gradient(135deg, #8c8c8c 0%, #595959 100%);
+}
+
+.restoration-tag.restoration-default {
+  background: linear-gradient(135deg, #8c8c8c 0%, #595959 100%);
+}
+
+.restoration-date {
+  font-size: 13px;
+  color: #999;
+}
+
+.restoration-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.restoration-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #5d4e37;
+  margin: 0;
+  flex: 1;
+}
+
+.delete-restoration-btn {
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.6;
+  transition: all 0.3s;
+  border-radius: 4px;
+}
+
+.delete-restoration-btn:hover {
+  opacity: 1;
+  background: rgba(245, 34, 45, 0.1);
+}
+
+.restoration-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #6b5b47;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+}
+
+.restoration-images {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.restoration-image-wrapper {
+  flex: 1;
+  min-width: 150px;
+  text-align: center;
+}
+
+.image-label {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.restoration-image {
+  width: 100%;
+  max-width: 200px;
+  border-radius: 8px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.restoration-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-label {
+  color: #8b6914;
+  font-weight: 500;
+}
+
+.meta-value {
+  color: #5d4e37;
+}
+
+.restoration-status {
+  margin-bottom: 12px;
+}
+
+.status-transition {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #fffbe6 0%, #fff7e6 100%);
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.status-before {
+  color: #d48806;
+  font-weight: 500;
+}
+
+.status-arrow {
+  color: #52c41a;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.status-after {
+  color: #389e0d;
+  font-weight: 500;
+}
+
+.restoration-notes {
+  font-size: 13px;
+  color: #8b6914;
+  font-style: italic;
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(139, 105, 20, 0.05);
+  border-radius: 6px;
+  border-left: 3px solid #faad14;
+}
+
+.empty-restoration {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #f6ffed 0%, #fcffe6 100%);
+  border-radius: 12px;
+}
+
+.empty-restoration .empty-icon {
+  font-size: 48px;
+  margin: 0 0 12px 0;
+  opacity: 0.5;
+}
+
+.empty-restoration .empty-text {
+  color: #999;
+  font-size: 14px;
+  margin: 0;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.restoration-modal {
+  max-width: 700px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #5d4e37;
+  margin: 0;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f5f5f5;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  transition: all 0.3s;
+}
+
+.modal-close:hover {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.form-row {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5d4e37;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e0d5c5;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #d4a574;
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e0d5c5;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  transition: all 0.3s;
+  background: #fff;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #d4a574;
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.restoration-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+}
+
+.type-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  border: 2px solid #e0d5c5;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #fff;
+}
+
+.type-option:hover {
+  border-color: #d4a574;
+  background: #fdf6e3;
+}
+
+.type-option.active {
+  border-color: #52c41a;
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+}
+
+.type-option .type-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.type-option .type-label {
+  font-size: 12px;
+  color: #5d4e37;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .restoration-timeline {
+    padding-left: 36px;
+  }
+
+  .restoration-dot {
+    left: -36px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .restoration-line {
+    left: 13px;
+  }
+
+  .restoration-images {
+    flex-direction: column;
+  }
+
+  .restoration-image-wrapper {
+    min-width: 100%;
+  }
+
+  .restoration-image {
+    max-width: 100%;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .restoration-type-grid {
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+  }
+
+  .modal-content {
+    max-height: 95vh;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 </style>
