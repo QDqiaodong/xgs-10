@@ -81,6 +81,11 @@
             </div>
           </div>
 
+          <div v-if="eraCategoryWarning" class="combo-warning">
+            <span class="combo-warning-icon">⚠️</span>
+            <span class="combo-warning-text">{{ eraCategoryWarning }}</span>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>保存状态</label>
@@ -271,6 +276,7 @@ import { categoriesAPI, erasAPI, postsAPI } from '../api'
 import { processImage, createImagePreview } from '../utils/imageProcessor'
 import { cleanItemName, cleanTitle } from '../utils/textCleaner'
 import { getCategoryIcon } from '../icons/categories'
+import { getEraCategoryWarning } from '../utils/eraUtils'
 
 const router = useRouter()
 
@@ -311,6 +317,20 @@ const titleWarning = computed(() => {
   if (!form.title.trim()) return ''
   if (!cleanedTitle.value) return '标题过短或无效，请输入至少2个有效字符'
   return ''
+})
+
+const selectedCategoryName = computed(() => {
+  if (!form.categoryId) return ''
+  const cat = categories.value.find(c => c.id === Number(form.categoryId))
+  return cat ? cat.name : ''
+})
+const selectedEraName = computed(() => {
+  if (!form.eraId) return ''
+  const era = eras.value.find(e => e.id === Number(form.eraId))
+  return era ? era.name : ''
+})
+const eraCategoryWarning = computed(() => {
+  return getEraCategoryWarning(selectedEraName.value, selectedCategoryName.value) || ''
 })
 
 const addTimelineEvent = () => {
@@ -403,6 +423,11 @@ const handleSubmit = async () => {
     return
   }
 
+  if (eraCategoryWarning.value) {
+    alert(eraCategoryWarning.value)
+    return
+  }
+
   submitting.value = true
   try {
     const formData = new FormData()
@@ -441,7 +466,8 @@ const handleSubmit = async () => {
     router.push(`/post/${res.data.id}`)
   } catch (e) {
     console.error('发布失败', e)
-    alert('发布失败，请稍后重试')
+    const serverMsg = e?.response?.data?.message
+    alert(serverMsg || '发布失败，请稍后重试')
   } finally {
     submitting.value = false
   }
@@ -611,6 +637,30 @@ onMounted(() => {
   font-size: 12px;
   color: #fa8c16;
   line-height: 1.5;
+}
+
+.combo-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -4px 0 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fff7e6 0%, #fff1f0 100%);
+  border: 1px solid #ffd591;
+  border-left: 4px solid #fa8c16;
+}
+
+.combo-warning-icon {
+  font-size: 16px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.combo-warning-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #ad6800;
 }
 
 .form-preview {

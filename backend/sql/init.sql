@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS eras (
     year_start INT,
     year_end INT,
     description TEXT,
+    life_background TEXT,
     icon VARCHAR(20),
     color_scheme VARCHAR(100),
     representative_categories VARCHAR(255),
@@ -110,6 +111,12 @@ INSERT INTO eras (name, year_start, year_end, description, icon, color_scheme, r
 ('80年代', 1980, 1989, '改革开放浪潮涌动，流行文化蓬勃发展。邓丽君的歌声、琼瑶的小说、铁皮玩具、任天堂红白机承载了无数童年记忆。', '♪', '#1976d2:#90caf9:#e3f2fd', '家用电器,影音设备,玩具玩偶', 3),
 ('90年代', 1990, 1999, '市场化浪潮席卷全国，港台文化成为主流。BP机、大哥大、CD随身听、小霸王学习机是那个时代的科技象征。', '⚡', '#ff6f00:#ffab40:#fff8e1', '通讯工具,影音设备,玩具玩偶', 4),
 ('00年代', 2000, 2009, '互联网时代的开启，MP3、数码相机、智能手机逐渐普及。超级女声、周杰伦、QQ聊天记录着青春的印记。', '◈', '#00acc1:#80deea:#e0f7fa', '通讯工具,影音设备,日常用品', 5);
+
+UPDATE eras SET life_background = '物资凭票供应的年代，粮票、布票、工业券是每个家庭的命根子。手表、自行车、缝纫机被称为“三大件”，是结婚彩礼的顶配，一辆永久自行车相当于普通工人三四个月工资。搪瓷缸、军绿挎包、补丁衣裳是日常标配，“新三年旧三年，缝缝补补又三年”是持家信条。收音机是少数家庭的奢侈品，晚饭后围坐听广播是难得的娱乐。物件用得久、修了又修，承载着艰苦奋斗岁月里朴素而笃定的生活信念。' WHERE name = '60年代';
+UPDATE eras SET life_background = '过渡与萌动的年代，计划经济仍在延续，但生活开始松动。的确良衬衫、喇叭裤悄悄流行，成为年轻人追赶时髦的标志。半导体收音机、黑白电视机开始进入少数家庭，邻里挤在一起看样板戏转播是难忘的集体记忆。缝纫机仍是结婚“三大件”之一，母亲踩着脚踏为全家缝制衣裳。铝制饭盒、搪瓷盆、国民床单是家家户户的熟悉面孔，朴素物件里藏着对好日子的盼望。' WHERE name = '70年代';
+UPDATE eras SET life_background = '改革开放春风吹遍，物资渐丰，生活色彩骤然丰富。电视机、洗衣机、电冰箱成为新“三大件”，谁家买了彩电便成了整栋楼的焦点。铁皮青蛙、变形金刚、任天堂红白机陪伴了一代人的童年，邓丽君的磁带在双卡录音机里循环播放。健美裤、蝙蝠衫、喇叭裤是街头风景，可口可乐、麦乳精、大大泡泡糖是舌尖上的新鲜。港台影视和流行文化涌入，物件开始承载个性与潮流。' WHERE name = '80年代';
+UPDATE eras SET life_background = '市场化浪潮席卷，港台文化成为主流，BP机、大哥大、小霸王学习机是那个年代的科技象征。呼机一声响便引来满街羡慕，大哥大是生意人的身份名片。VCD、CD随身听里放着四大天王的歌。街机厅、录像厅、网吧开始冒头，超级女声的萌芽已在酝酿。呼机、磁卡电话、IC卡记录着通讯的变迁，物件更新加快，时尚与个性的表达愈发鲜明。' WHERE name = '90年代';
+UPDATE eras SET life_background = '互联网时代全面开启，QQ滴滴声串起青春，超级女声、周杰伦定义了一代人的流行记忆。MP3、数码相机、彩屏手机陆续普及，诺基亚、摩托罗拉是潮人标配。博客、QQ空间记录心情，网吧里传奇、劲舞团通宵达旦。数码产品迭代飞快，从按键机到触屏智能机的过渡悄然发生。物件开始数字化、个性化，每一台设备都连着更广阔的世界，也封存着世纪初的青葱岁月。' WHERE name = '00年代';
 
 INSERT INTO posts (title, item_name, content, story, memory, era_background, current_status, preservation_status, usage_scene, story_summary, item_source, emotion_keywords, images, category_id, era_id, view_count, author_name) VALUES
 ('老黑白电视机的回忆', '黑白电视机', '这是一台80年代的黑白电视机，还记得小时候全村人围在一起看西游记的场景吗？', '这台电视是爸爸当年攒了三个月工资买的，当时是村里第一台电视。', '每到傍晚，院子里就坐满了人，大家自带小板凳，那种热闹的感觉再也找不到了。', '80年代中国电视机开始进入普通家庭，但对于大多数农村家庭来说仍是奢侈品。一台14寸黑白电视售价约400元，相当于普通工人三四个月的工资。当时电视台节目有限，每晚黄金时段的电视剧是全村人最重要的娱乐活动。', '2005年搬家时送给了老家亲戚，据说至今仍能正常开机收看，偶尔还会被拿出来播放老录像带，成为家族怀旧聚会的焦点。', '完好保存', '家庭客厅 / 全村集体观看', '1985年父亲花三个月工资购入的全村第一台黑白电视，承载着全村人围看西游记的集体记忆，至今仍能正常使用。', '父亲在县城供销社购买', '["怀念","温暖","怀旧"]', '[{"url":"https://picsum.photos/seed/tv1/600/400","originalUrl":"https://picsum.photos/seed/tv1/1200/800","compressedUrl":"https://picsum.photos/seed/tv1/600/400","thumbnailUrl":"https://picsum.photos/seed/tv1/300/200","width":600,"height":400,"originalWidth":1200,"originalHeight":800,"isMain":true,"sortOrder":0,"displayRatio":1.5,"format":"jpg","fileSize":245760,"compressedFileSize":81920,"processingStatus":"COMPLETED"},{"url":"https://picsum.photos/seed/tv2/600/400","originalUrl":"https://picsum.photos/seed/tv2/1200/800","compressedUrl":"https://picsum.photos/seed/tv2/600/400","thumbnailUrl":"https://picsum.photos/seed/tv2/300/200","width":600,"height":400,"originalWidth":1200,"originalHeight":800,"isMain":false,"sortOrder":1,"displayRatio":1.5,"format":"jpg","fileSize":307200,"compressedFileSize":102400,"processingStatus":"COMPLETED"}]', 2, 3, 128, '老张'),

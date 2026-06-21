@@ -149,6 +149,19 @@
             <p class="desc-text">{{ eraDetail.description || '暂无年代说明' }}</p>
           </div>
 
+          <div class="profile-section profile-life" v-if="eraDetail.lifeBackground">
+            <div class="section-label">
+              <span class="section-fold" @click="toggleLifeBackground">
+                <span class="label-icon">🏛️</span>年代背景小传
+                <span class="fold-arrow">{{ showLifeBackground ? '▼' : '▶' }}</span>
+              </span>
+              <span class="life-context-tip">与老物件相关的时代语境</span>
+            </div>
+            <div class="life-background-wrap" v-show="showLifeBackground">
+              <p class="life-text">{{ eraDetail.lifeBackground }}</p>
+            </div>
+          </div>
+
           <div class="profile-section profile-categories">
             <div class="section-label">
               <span class="label-icon">🏷️</span>代表类别
@@ -485,6 +498,7 @@ const viewMode = ref('grouped')
 const eraDetail = ref(null)
 const showCategoryBreakdown = ref(true)
 const showPreservationBreakdown = ref(true)
+const showLifeBackground = ref(true)
 
 const selectedEraName = computed(() => {
   const era = eras.value.find(e => e.id === selectedEra.value)
@@ -597,6 +611,10 @@ const getCategoryPrimaryColor = (catName) => {
 
 const toggleCategoryBreakdown = () => {
   showCategoryBreakdown.value = !showCategoryBreakdown.value
+}
+
+const toggleLifeBackground = () => {
+  showLifeBackground.value = !showLifeBackground.value
 }
 
 const togglePreservationBreakdown = () => {
@@ -1168,6 +1186,32 @@ onMounted(() => {
   background: linear-gradient(135deg, #fdf8f2 0%, #faf3e7 100%);
   border-radius: 12px;
   border-left: 4px solid #d4a574;
+}
+
+.life-context-tip {
+  margin-left: auto;
+  font-size: 12px;
+  color: #b08d57;
+  font-weight: normal;
+  letter-spacing: 0.5px;
+}
+
+.life-background-wrap {
+  margin-top: 10px;
+}
+
+.life-text {
+  font-size: 14px;
+  line-height: 1.95;
+  color: #5a4632;
+  margin: 0;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #f5efe4 0%, #efe6d3 100%);
+  border-radius: 12px;
+  border-left: 4px solid #b08d57;
+  white-space: pre-wrap;
+  text-indent: 2em;
+  letter-spacing: 0.3px;
 }
 
 .rep-categories-list {

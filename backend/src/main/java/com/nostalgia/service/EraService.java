@@ -64,6 +64,7 @@ public class EraService {
         dto.setYearStart(era.getYearStart());
         dto.setYearEnd(era.getYearEnd());
         dto.setDescription(era.getDescription());
+        dto.setLifeBackground(era.getLifeBackground());
         dto.setIcon(era.getIcon());
         dto.setColorScheme(era.getColorScheme());
         dto.setRepresentativeCategories(era.getRepresentativeCategories());

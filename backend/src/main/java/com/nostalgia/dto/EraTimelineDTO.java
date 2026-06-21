@@ -13,6 +13,7 @@ public class EraTimelineDTO {
     private Integer yearStart;
     private Integer yearEnd;
     private String description;
+    private String lifeBackground;
     private String icon;
     private String colorScheme;
     private String representativeCategories;

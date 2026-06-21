@@ -27,6 +27,9 @@ public class Era {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "life_background", columnDefinition = "TEXT")
+    private String lifeBackground;
+
     @Column(length = 20)
     private String icon;
 

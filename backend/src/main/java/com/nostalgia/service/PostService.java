@@ -14,6 +14,7 @@ import com.nostalgia.repository.TimelineEventRepository;
 import com.nostalgia.util.ImageInfo;
 import com.nostalgia.util.StorySummaryExtractor;
 import com.nostalgia.util.TextCleaner;
+import com.nostalgia.util.EraCategoryValidator;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -175,6 +176,8 @@ public class PostService {
     @CacheEvict(value = {"hotPosts", "archiveStats", "categories", "eras"}, allEntries = true)
     @Transactional
     public Post createPost(Post post, List<MultipartFile> images, List<TimelineEvent> timelineEvents) throws IOException {
+        validateEraAndCategory(post.getEraId(), post.getCategoryId());
+
         if (images != null && !images.isEmpty()) {
             List<PostImage> postImages = new ArrayList<>();
 
@@ -209,6 +212,22 @@ public class PostService {
 
     public void populateCategoryAndEraNamesExternal(Post post) {
         populateCategoryAndEraNames(post);
+    }
+
+    private void validateEraAndCategory(Long eraId, Long categoryId) {
+        if (categoryId == null) {
+            throw new IllegalArgumentException("所属品类不能为空");
+        }
+        if (eraId == null) {
+            throw new IllegalArgumentException("所属年代不能为空");
+        }
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new GlobalExceptionHandler.ResourceNotFoundException(
+                        "类别编号 " + categoryId + " 不存在，请选择有效的品类"));
+        Era era = eraRepository.findById(eraId)
+                .orElseThrow(() -> new GlobalExceptionHandler.ResourceNotFoundException(
+                        "年代编号 " + eraId + " 不存在，请选择有效的年代"));
+        EraCategoryValidator.validate(era, category);
     }
 
     @CacheEvict(value = {"hotPosts", "categories", "eras"}, allEntries = true)

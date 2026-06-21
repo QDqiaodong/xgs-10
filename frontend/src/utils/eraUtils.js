@@ -150,3 +150,31 @@ export function getEraCssVars(eraNameOrCode) {
     '--era-accent': meta.colorAccent
   }
 }
+
+export const CategoryEraRule = {
+  '通讯工具': EraCode.ERA_90S,
+  '家用电器': EraCode.ERA_80S,
+  '影音设备': EraCode.ERA_70S
+}
+
+export function getEarliestEraForCategory(categoryName) {
+  if (!categoryName) return null
+  const code = CategoryEraRule[categoryName]
+  return code ? EraMeta[code].name : null
+}
+
+export function isEraCategoryReasonable(eraNameOrCode, categoryName) {
+  if (!eraNameOrCode || !categoryName) return true
+  const minCode = CategoryEraRule[categoryName]
+  if (!minCode) return true
+  const eraMeta = getEraMeta(eraNameOrCode)
+  const minMeta = EraMeta[minCode]
+  return eraMeta.sortOrder >= minMeta.sortOrder
+}
+
+export function getEraCategoryWarning(eraNameOrCode, categoryName) {
+  if (isEraCategoryReasonable(eraNameOrCode, categoryName)) return null
+  const earliestName = getEarliestEraForCategory(categoryName)
+  const eraName = getEraMeta(eraNameOrCode).name
+  return `「${categoryName}」类物件最早见于${earliestName}，归入「${eraName}」可能不太合理，请核对年代与品类是否匹配，以提升资料可信度。`
+}
