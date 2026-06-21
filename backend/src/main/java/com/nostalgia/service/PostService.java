@@ -1,5 +1,6 @@
 package com.nostalgia.service;
 
+import com.nostalgia.dto.DetailedStatsDTO;
 import com.nostalgia.entity.Category;
 import com.nostalgia.entity.Era;
 import com.nostalgia.entity.Post;
@@ -57,6 +58,16 @@ public class PostService {
 
         Page<Post> posts = postRepository.findAll(spec, pageable);
 
+        posts.forEach(this::populateCategoryAndEraNames);
+        posts.forEach(this::normalizeImages);
+        posts.forEach(this::normalizePreservationStatus);
+        return posts;
+    }
+
+    public List<Post> getPostsByEra(Long categoryId, Long eraId, String preservationStatus) {
+        Specification<Post> spec = buildSpecification(categoryId, eraId, preservationStatus);
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        List<Post> posts = postRepository.findAll(spec, sort);
         posts.forEach(this::populateCategoryAndEraNames);
         posts.forEach(this::normalizeImages);
         posts.forEach(this::normalizePreservationStatus);
@@ -155,13 +166,13 @@ public class PostService {
         return post;
     }
 
-    @CacheEvict(value = {"hotPosts"}, allEntries = true)
+    @CacheEvict(value = {"hotPosts", "archiveStats"}, allEntries = true)
     @Transactional
     public Post createPost(Post post, List<MultipartFile> images) throws IOException {
         return createPost(post, images, null);
     }
 
-    @CacheEvict(value = {"hotPosts"}, allEntries = true)
+    @CacheEvict(value = {"hotPosts", "archiveStats"}, allEntries = true)
     @Transactional
     public Post createPost(Post post, List<MultipartFile> images, List<TimelineEvent> timelineEvents) throws IOException {
         if (images != null && !images.isEmpty()) {
@@ -449,5 +460,126 @@ public class PostService {
             normalizedMap.merge(key, count, Long::sum);
         }
         return normalizedMap;
+    }
+
+    @Cacheable(value = "archiveStats", key = "'all'")
+    public DetailedStatsDTO getArchiveStats() {
+        DetailedStatsDTO stats = new DetailedStatsDTO();
+
+        List<Era> eras = eraRepository.findAllByOrderBySortOrderAsc();
+        List<Category> categories = categoryRepository.findAllByOrderBySortOrderAsc();
+        List<PreservationStatus> statuses = PreservationStatus.getAllStatuses();
+
+        long totalPosts = countPosts(null, null, null);
+        stats.setTotalPosts(totalPosts);
+        stats.setTotalEras(eras.size());
+        stats.setTotalCategories(categories.size());
+        stats.setTotalPreservationStatuses(statuses.size());
+
+        Map<Long, Long> eraCountMap = getCountByEraGrouped();
+        Map<Long, Long> categoryCountMap = getCountByCategoryGrouped();
+        Map<String, Long> statusCountMap = getCountByPreservationStatusGrouped();
+        Map<String, Long> eraCategoryCountMap = getCountByEraAndCategoryGrouped();
+        Map<String, Long> eraStatusCountMap = getCountByEraAndPreservationStatusGrouped();
+        Map<String, Long> categoryStatusCountMap = getCountByCategoryAndPreservationStatusGrouped();
+
+        Map<String, Long> eraDistribution = new LinkedHashMap<>();
+        Map<String, Long> categoryDistribution = new LinkedHashMap<>();
+        Map<String, Long> preservationStatusDistribution = new LinkedHashMap<>();
+
+        List<DetailedStatsDTO.EraStatsDTO> eraStatsList = new ArrayList<>();
+        List<DetailedStatsDTO.CategoryStatsDTO> categoryStatsList = new ArrayList<>();
+        List<DetailedStatsDTO.PreservationStatusStatsDTO> preservationStatusStatsList = new ArrayList<>();
+
+        for (Era era : eras) {
+            DetailedStatsDTO.EraStatsDTO eraStats = new DetailedStatsDTO.EraStatsDTO();
+            eraStats.setEraId(era.getId());
+            eraStats.setEraName(era.getName());
+            eraStats.setYearStart(era.getYearStart());
+            eraStats.setYearEnd(era.getYearEnd());
+
+            long eraTotal = eraCountMap.getOrDefault(era.getId(), 0L);
+            eraStats.setTotalCount(eraTotal);
+            eraDistribution.put(era.getName(), eraTotal);
+
+            Map<String, Long> byCategory = new LinkedHashMap<>();
+            for (Category cat : categories) {
+                String key = era.getId() + "_" + cat.getId();
+                byCategory.put(cat.getName(), eraCategoryCountMap.getOrDefault(key, 0L));
+            }
+            eraStats.setByCategory(byCategory);
+
+            Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
+            for (PreservationStatus status : statuses) {
+                String key = era.getId() + "_" + status.getLabel();
+                byPreservationStatus.put(status.getLabel(), eraStatusCountMap.getOrDefault(key, 0L));
+            }
+            eraStats.setByPreservationStatus(byPreservationStatus);
+
+            eraStatsList.add(eraStats);
+        }
+        stats.setEraStats(eraStatsList);
+        stats.setEraDistribution(eraDistribution);
+
+        for (Category cat : categories) {
+            DetailedStatsDTO.CategoryStatsDTO catStats = new DetailedStatsDTO.CategoryStatsDTO();
+            catStats.setCategoryId(cat.getId());
+            catStats.setCategoryName(cat.getName());
+            catStats.setCategoryIcon(cat.getIcon());
+
+            long catTotal = categoryCountMap.getOrDefault(cat.getId(), 0L);
+            catStats.setTotalCount(catTotal);
+            categoryDistribution.put(cat.getName(), catTotal);
+
+            Map<String, Long> byEra = new LinkedHashMap<>();
+            for (Era era : eras) {
+                String key = era.getId() + "_" + cat.getId();
+                byEra.put(era.getName(), eraCategoryCountMap.getOrDefault(key, 0L));
+            }
+            catStats.setByEra(byEra);
+
+            Map<String, Long> byPreservationStatus = new LinkedHashMap<>();
+            for (PreservationStatus status : statuses) {
+                String key = cat.getId() + "_" + status.getLabel();
+                byPreservationStatus.put(status.getLabel(), categoryStatusCountMap.getOrDefault(key, 0L));
+            }
+            catStats.setByPreservationStatus(byPreservationStatus);
+
+            categoryStatsList.add(catStats);
+        }
+        stats.setCategoryStats(categoryStatsList);
+        stats.setCategoryDistribution(categoryDistribution);
+
+        for (PreservationStatus status : statuses) {
+            DetailedStatsDTO.PreservationStatusStatsDTO statusStats = new DetailedStatsDTO.PreservationStatusStatsDTO();
+            statusStats.setStatus(status.name());
+            statusStats.setLabel(status.getLabel());
+            statusStats.setIcon(status.getIcon());
+            statusStats.setColor(status.getColor());
+
+            long statusTotal = statusCountMap.getOrDefault(status.getLabel(), 0L);
+            statusStats.setTotalCount(statusTotal);
+            preservationStatusDistribution.put(status.getLabel(), statusTotal);
+
+            Map<String, Long> byCategory = new LinkedHashMap<>();
+            for (Category cat : categories) {
+                String key = cat.getId() + "_" + status.getLabel();
+                byCategory.put(cat.getName(), categoryStatusCountMap.getOrDefault(key, 0L));
+            }
+            statusStats.setByCategory(byCategory);
+
+            Map<String, Long> byEra = new LinkedHashMap<>();
+            for (Era era : eras) {
+                String key = era.getId() + "_" + status.getLabel();
+                byEra.put(era.getName(), eraStatusCountMap.getOrDefault(key, 0L));
+            }
+            statusStats.setByEra(byEra);
+
+            preservationStatusStatsList.add(statusStats);
+        }
+        stats.setPreservationStatusStats(preservationStatusStatsList);
+        stats.setPreservationStatusDistribution(preservationStatusDistribution);
+
+        return stats;
     }
 }

@@ -30,6 +30,7 @@ public class RedisConfig {
                 .withCacheConfiguration("hotPosts", defaultConfig.entryTtl(Duration.ofHours(1)))
                 .withCacheConfiguration("categories", defaultConfig.entryTtl(Duration.ofHours(2)))
                 .withCacheConfiguration("eras", defaultConfig.entryTtl(Duration.ofHours(2)))
+                .withCacheConfiguration("archiveStats", defaultConfig.entryTtl(Duration.ofHours(1)))
                 .build();
     }
 
